@@ -11,6 +11,8 @@ alquiler.
 - Tailwind CSS
 - React Router
 - GitHub Actions y GitHub Pages
+- Google Identity Services
+- Google Sheets API
 
 ## Desarrollo local
 
@@ -28,10 +30,19 @@ npm run build
 
 ## Variables de entorno
 
-Copia `.env.example` como `.env.local` y configura `VITE_API_URL` cuando esté
-disponible la API de Google Apps Script.
+Copia `.env.example` como `.env.local` y configura:
+
+- `VITE_GOOGLE_CLIENT_ID`: cliente OAuth de tipo aplicación web.
+- `VITE_GOOGLE_SHEET_ID`: identificador de la base en Google Sheets.
+- `VITE_ALLOWED_GOOGLE_EMAIL`: única cuenta admitida por la interfaz.
+
+El token OAuth se mantiene únicamente en memoria. El navegador consulta Google
+Sheets después de que el usuario autoriza el acceso.
 
 ## Despliegue
 
 Cada push a `main` ejecuta el workflow `.github/workflows/deploy.yml`, genera el
 directorio `dist` y publica el resultado en GitHub Pages.
+
+Configura las variables de repositorio `GOOGLE_CLIENT_ID`, `GOOGLE_SHEET_ID` y
+`ALLOWED_GOOGLE_EMAIL` para el build de producción.
