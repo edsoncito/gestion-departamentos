@@ -37,3 +37,17 @@ export function isSameMonth(isoDate: string | null, comparison = new Date()) {
   const [year, month] = isoDate.split('-').map(Number)
   return year === comparison.getFullYear() && month === comparison.getMonth() + 1
 }
+
+export function isPeriodDue(isoDate: string, comparison = new Date()) {
+  const [year, month] = isoDate.split('-').map(Number)
+  const periodValue = year * 12 + month
+  const comparisonValue = comparison.getFullYear() * 12 + comparison.getMonth() + 1
+  return periodValue <= comparisonValue
+}
+
+export function isPeriodOverdue(isoDate: string, comparison = new Date()) {
+  const [year, month] = isoDate.split('-').map(Number)
+  const periodValue = year * 12 + month
+  const comparisonValue = comparison.getFullYear() * 12 + comparison.getMonth() + 1
+  return periodValue < comparisonValue
+}
