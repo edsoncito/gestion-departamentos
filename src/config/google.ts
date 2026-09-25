@@ -1,4 +1,6 @@
-export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() ?? ''
+export const GOOGLE_CLIENT_ID =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() ||
+  '241839280721-6nitbhf8nbpbhtr0e2asbblr23hi49tf.apps.googleusercontent.com'
 
 export const GOOGLE_SHEET_ID =
   import.meta.env.VITE_GOOGLE_SHEET_ID?.trim() ||
