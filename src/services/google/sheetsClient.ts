@@ -3,6 +3,7 @@ import type {
   Contract,
   Department,
   Payment,
+  PaymentUpdate,
   RentalDatabase,
   Tenant,
 } from '../../types/database'
@@ -20,8 +21,9 @@ function serialToIso(value: unknown) {
   return new Date(EXCEL_EPOCH + value * DAY_IN_MS).toISOString().slice(0, 10)
 }
 
-function isoToSerial(value: Date) {
-  const utc = Date.UTC(value.getFullYear(), value.getMonth(), value.getDate())
+function isoToSerial(value: string) {
+  const [year, month, day] = value.split('-').map(Number)
+  const utc = Date.UTC(year, month - 1, day)
   return Math.round((utc - EXCEL_EPOCH) / DAY_IN_MS)
 }
 
@@ -128,13 +130,12 @@ export async function loadRentalDatabase(accessToken: string): Promise<RentalDat
   return { departments, tenants, contracts, payments }
 }
 
-export async function markPaymentAsPaid(
+export async function updatePaymentRow(
   accessToken: string,
   payment: Payment,
-  paymentDate: Date,
-  method: Exclude<Payment['method'], ''> = 'QR',
+  update: PaymentUpdate,
 ) {
-  const range = `Pagos!E${payment.rowNumber}:H${payment.rowNumber}`
+  const range = `Pagos!E${payment.rowNumber}:I${payment.rowNumber}`
   const query = new URLSearchParams({ valueInputOption: 'USER_ENTERED' })
   await googleFetch(
     accessToken,
@@ -144,7 +145,13 @@ export async function markPaymentAsPaid(
       body: JSON.stringify({
         range,
         majorDimension: 'ROWS',
-        values: [[payment.expectedAmount, isoToSerial(paymentDate), method, 'PAGADO']],
+        values: [[
+          update.paidAmount ?? '',
+          update.paidAt ? isoToSerial(update.paidAt) : '',
+          update.method,
+          update.status,
+          update.notes,
+        ]],
       }),
     },
   )

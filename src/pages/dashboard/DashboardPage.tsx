@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { useRentalData } from '../../context/RentalDataContext'
-import { formatMoney, formatPeriod, isSameMonth } from '../../utils/format'
+import { formatMoney, formatPeriod, isPeriodDue, isPeriodOverdue, isSameMonth } from '../../utils/format'
 
 export function DashboardPage() {
   const { data, departmentViews, loading } = useRentalData()
@@ -13,7 +13,9 @@ export function DashboardPage() {
     (total, payment) => total + (payment.paidAmount ?? 0),
     0,
   )
-  const pendingPayments = payments.filter((payment) => payment.status === 'PENDIENTE')
+  const pendingPayments = payments.filter(
+    (payment) => payment.status === 'PENDIENTE' && isPeriodDue(payment.period),
+  )
   const pendingAmount = pendingPayments.reduce(
     (total, payment) => total + payment.expectedAmount,
     0,
@@ -59,6 +61,9 @@ export function DashboardPage() {
         <div className="grid gap-3 lg:grid-cols-2">
           {departmentViews.map((department) => {
             const currentPayment = department.payments.find((payment) => isSameMonth(payment.period))
+            const overdueCount = department.payments.filter(
+              (payment) => payment.status === 'PENDIENTE' && isPeriodOverdue(payment.period),
+            ).length
             return (
               <Link
                 key={department.id}
@@ -71,8 +76,8 @@ export function DashboardPage() {
                     <h4 className="mt-1 text-lg font-bold group-hover:text-[#315f50]">{department.name}</h4>
                     <p className="mt-1 text-sm text-[#6a756e]">{department.tenant?.fullName || 'Sin inquilino activo'}</p>
                   </div>
-                  <span className={`px-2.5 py-1 text-[11px] font-bold ${currentPayment?.status === 'PAGADO' ? 'bg-[#e4f0e9] text-[#315f50]' : 'bg-[#fff1c9] text-[#775b12]'}`}>
-                    {currentPayment ? currentPayment.status : 'SIN REGISTRO'}
+                  <span className={`px-2.5 py-1 text-[11px] font-bold ${overdueCount ? 'bg-[#f8dfdb] text-[#8a342c]' : currentPayment?.status === 'PAGADO' ? 'bg-[#e4f0e9] text-[#315f50]' : 'bg-[#fff1c9] text-[#775b12]'}`}>
+                    {overdueCount ? `${overdueCount} ATRASADO${overdueCount === 1 ? '' : 'S'}` : currentPayment ? currentPayment.status : 'SIN REGISTRO'}
                   </span>
                 </div>
                 <div className="mt-5 flex items-end justify-between border-t border-[#e1e5e2] pt-4">

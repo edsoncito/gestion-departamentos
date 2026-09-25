@@ -45,6 +45,14 @@ export interface Payment {
   rowNumber: number
 }
 
+export interface PaymentUpdate {
+  paidAmount: number | null
+  paidAt: string | null
+  method: PaymentMethod
+  status: PaymentStatus
+  notes: string
+}
+
 export interface RentalDatabase {
   departments: Department[]
   tenants: Tenant[]

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { useRentalData } from '../../context/RentalDataContext'
-import { formatDate, formatMoney, isSameMonth } from '../../utils/format'
+import { formatDate, formatMoney, isPeriodOverdue, isSameMonth } from '../../utils/format'
 
 export function DepartmentsPage() {
   const { departmentViews } = useRentalData()
@@ -17,6 +17,9 @@ export function DepartmentsPage() {
       <div className="overflow-hidden border border-[#ccd4ce] bg-white">
         {departmentViews.map((department, index) => {
           const currentPayment = department.payments.find((payment) => isSameMonth(payment.period))
+          const overdueCount = department.payments.filter(
+            (payment) => payment.status === 'PENDIENTE' && isPeriodOverdue(payment.period),
+          ).length
           return (
             <Link
               key={department.id}
@@ -33,8 +36,8 @@ export function DepartmentsPage() {
                 <p className="sm:mt-2"><span className="block text-[11px] uppercase text-[#758079]">Contrato hasta</span><span className="font-bold">{formatDate(department.contract?.endDate ?? null)}</span></p>
               </div>
               <div className="flex items-center justify-between gap-3 sm:block sm:text-right">
-                <span className={`inline-block px-2.5 py-1 text-[11px] font-bold ${currentPayment?.status === 'PAGADO' ? 'bg-[#e4f0e9] text-[#315f50]' : 'bg-[#fff1c9] text-[#775b12]'}`}>
-                  {currentPayment?.status ?? 'SIN REGISTRO'}
+                <span className={`inline-block px-2.5 py-1 text-[11px] font-bold ${overdueCount ? 'bg-[#f8dfdb] text-[#8a342c]' : currentPayment?.status === 'PAGADO' ? 'bg-[#e4f0e9] text-[#315f50]' : 'bg-[#fff1c9] text-[#775b12]'}`}>
+                  {overdueCount ? `${overdueCount} ATRASADO${overdueCount === 1 ? '' : 'S'}` : currentPayment?.status ?? 'SIN REGISTRO'}
                 </span>
                 <p className="text-sm font-bold text-[#315f50] sm:mt-3">Ver detalle →</p>
               </div>

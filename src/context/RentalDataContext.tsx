@@ -7,11 +7,11 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { loadRentalDatabase, markPaymentAsPaid } from '../services/google/sheetsClient'
+import { loadRentalDatabase, updatePaymentRow } from '../services/google/sheetsClient'
 import type {
   DepartmentView,
   Payment,
-  PaymentMethod,
+  PaymentUpdate,
   RentalDatabase,
 } from '../types/database'
 import { useGoogleSession } from './GoogleSessionContext'
@@ -22,11 +22,7 @@ interface RentalDataValue {
   error: string | null
   loading: boolean
   refresh: () => Promise<void>
-  registerPayment: (
-    payment: Payment,
-    paymentDate?: Date,
-    method?: Exclude<PaymentMethod, ''>,
-  ) => Promise<void>
+  savePayment: (payment: Payment, update: PaymentUpdate) => Promise<void>
 }
 
 const RentalDataContext = createContext<RentalDataValue | null>(null)
@@ -57,14 +53,10 @@ export function RentalDataProvider({ children }: { children: ReactNode }) {
     void refresh()
   }, [refresh])
 
-  const registerPayment = useCallback(
-    async (
-      payment: Payment,
-      paymentDate = new Date(),
-      method: Exclude<PaymentMethod, ''> = 'QR',
-    ) => {
+  const savePayment = useCallback(
+    async (payment: Payment, update: PaymentUpdate) => {
       if (!accessToken) throw new Error('La sesión de Google no está activa.')
-      await markPaymentAsPaid(accessToken, payment, paymentDate, method)
+      await updatePaymentRow(accessToken, payment, update)
       await refresh()
     },
     [accessToken, refresh],
@@ -88,8 +80,8 @@ export function RentalDataProvider({ children }: { children: ReactNode }) {
   }, [data])
 
   const value = useMemo<RentalDataValue>(
-    () => ({ data, departmentViews, error, loading, refresh, registerPayment }),
-    [data, departmentViews, error, loading, refresh, registerPayment],
+    () => ({ data, departmentViews, error, loading, refresh, savePayment }),
+    [data, departmentViews, error, loading, refresh, savePayment],
   )
 
   return (
