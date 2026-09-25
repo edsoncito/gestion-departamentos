@@ -12,8 +12,8 @@ export function AppLayout() {
   const { error, loading, refresh } = useRentalData()
 
   return (
-    <div className="min-h-screen bg-[#f2f4ef] pb-20 text-[#1f2823] md:pb-0">
-      <header className="border-b border-[#ccd4ce] bg-[#fbfcfa]">
+    <div className="min-h-screen bg-[#f2f4ef] pb-[calc(5rem+env(safe-area-inset-bottom))] text-[#1f2823] md:pb-0">
+      <header className="border-b border-[#ccd4ce] bg-[#fbfcfa] pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-5 px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <span className="grid size-9 place-items-center bg-[#315f50] text-xs font-black text-white">GA</span>
@@ -73,7 +73,7 @@ export function AppLayout() {
         <Outlet />
       </main>
 
-      <nav aria-label="Navegación móvil" className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-2 border-t border-[#cbd3cd] bg-[#fbfcfa] md:hidden">
+      <nav aria-label="Navegación móvil" className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-2 border-t border-[#cbd3cd] bg-[#fbfcfa] pb-[env(safe-area-inset-bottom)] md:hidden">
         {navigation.map((item) => (
           <NavLink
             key={item.to}

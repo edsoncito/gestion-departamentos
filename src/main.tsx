@@ -6,6 +6,14 @@ import { GoogleSessionProvider } from './context/GoogleSessionContext'
 import { RentalDataProvider } from './context/RentalDataContext'
 import './styles/index.css'
 
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    void navigator.serviceWorker.register('/gestion-departamentos/sw.js', {
+      scope: '/gestion-departamentos/',
+    })
+  })
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <GoogleSessionProvider>

@@ -13,6 +13,7 @@ alquiler.
 - GitHub Actions y GitHub Pages
 - Google Identity Services
 - Google Sheets API
+- PWA instalable en iPhone y otros dispositivos
 
 ## Desarrollo local
 
@@ -39,6 +40,16 @@ del proyecto desplegado:
 
 El token OAuth se mantiene únicamente en memoria. El navegador consulta Google
 Sheets después de que el usuario autoriza el acceso.
+
+## Instalar en iPhone
+
+1. Abre la aplicación publicada usando Safari.
+2. Pulsa **Compartir**.
+3. Selecciona **Agregar a pantalla de inicio** y confirma con **Agregar**.
+
+La aplicación se abrirá en modo independiente. El service worker guarda únicamente
+los archivos estáticos de la interfaz; los tokens y las respuestas de Google Sheets
+no se almacenan para uso sin conexión.
 
 ## Despliegue
 

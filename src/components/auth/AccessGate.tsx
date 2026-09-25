@@ -6,7 +6,7 @@ export function AccessGate({ children }: { children: ReactNode }) {
 
   if (!ready) {
     return (
-      <main className="grid min-h-screen place-items-center bg-[#f2f4ef] px-5 text-[#1f2823]">
+      <main className="grid min-h-screen place-items-center bg-[#f2f4ef] px-5 pt-[env(safe-area-inset-top)] text-[#1f2823]">
         <p className="text-sm">Preparando acceso seguro…</p>
       </main>
     )
@@ -14,7 +14,7 @@ export function AccessGate({ children }: { children: ReactNode }) {
 
   if (!configured || !accessToken) {
     return (
-      <main className="grid min-h-screen place-items-center bg-[#f2f4ef] px-5 py-12 text-[#1f2823]">
+      <main className="grid min-h-screen place-items-center bg-[#f2f4ef] px-5 py-12 pt-[calc(3rem+env(safe-area-inset-top))] text-[#1f2823]">
         <section className="w-full max-w-md border border-[#cfd6d0] bg-white p-6 shadow-[0_12px_36px_rgba(31,40,35,0.08)] sm:p-8">
           <div className="mb-8 flex items-center gap-3 border-b border-[#dce1dd] pb-5">
             <span className="grid size-10 place-items-center bg-[#315f50] text-sm font-bold text-white">GA</span>

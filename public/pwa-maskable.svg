@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Gestión de alquileres">
+  <rect width="512" height="512" fill="#315f50"/>
+  <path d="M154 190h204v170H154z" fill="#f2f4ef"/>
+  <path d="M190 226h54v54h-54zm78 0h54v54h-54zm-78 78h54v56h-54zm78 0h54v56h-54z" fill="#315f50"/>
+  <path d="m134 190 122-70 122 70H134z" fill="#d6e0da"/>
+</svg>
