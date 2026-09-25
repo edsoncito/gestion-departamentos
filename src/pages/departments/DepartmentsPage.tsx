@@ -1,25 +1,46 @@
+import { Link } from 'react-router-dom'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { useRentalData } from '../../context/RentalDataContext'
+import { formatDate, formatMoney, isSameMonth } from '../../utils/format'
 
 export function DepartmentsPage() {
+  const { departmentViews } = useRentalData()
+
   return (
-    <section className="space-y-8">
+    <section className="space-y-7">
       <PageHeader
         eyebrow="Inmuebles"
         title="Departamentos"
-        description="Desde aquí podrás consultar cada departamento, su inquilino actual y el historial de pagos."
+        description="Consultá el contrato vigente, el inquilino y la situación mensual de cada inmueble."
       />
 
-      <div className="rounded-2xl border border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-emerald-100 text-xl font-semibold text-emerald-800">
-          D
-        </div>
-        <h3 className="mt-4 text-lg font-semibold text-slate-950">
-          Esperando la estructura del Excel
-        </h3>
-        <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-600">
-          La lista y el formulario se construirán con los campos reales para evitar
-          información duplicada o pantallas que no necesites.
-        </p>
+      <div className="overflow-hidden border border-[#ccd4ce] bg-white">
+        {departmentViews.map((department, index) => {
+          const currentPayment = department.payments.find((payment) => isSameMonth(payment.period))
+          return (
+            <Link
+              key={department.id}
+              to={`/departamentos/${department.id}`}
+              className={`grid gap-4 p-5 transition hover:bg-[#f7f9f6] sm:grid-cols-[1.2fr_1fr_auto] sm:items-center ${index ? 'border-t border-[#dce1dd]' : ''}`}
+            >
+              <div>
+                <p className="text-xs font-bold text-[#6a756e]">{department.id}</p>
+                <h3 className="mt-1 text-lg font-bold">{department.name}</h3>
+                <p className="mt-1 text-sm text-[#657069]">{department.tenant?.fullName || 'Sin inquilino'}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm sm:block">
+                <p><span className="block text-[11px] uppercase text-[#758079]">Mensual</span><span className="font-bold">{formatMoney(department.contract?.monthlyAmount ?? 0)}</span></p>
+                <p className="sm:mt-2"><span className="block text-[11px] uppercase text-[#758079]">Contrato hasta</span><span className="font-bold">{formatDate(department.contract?.endDate ?? null)}</span></p>
+              </div>
+              <div className="flex items-center justify-between gap-3 sm:block sm:text-right">
+                <span className={`inline-block px-2.5 py-1 text-[11px] font-bold ${currentPayment?.status === 'PAGADO' ? 'bg-[#e4f0e9] text-[#315f50]' : 'bg-[#fff1c9] text-[#775b12]'}`}>
+                  {currentPayment?.status ?? 'SIN REGISTRO'}
+                </span>
+                <p className="text-sm font-bold text-[#315f50] sm:mt-3">Ver detalle →</p>
+              </div>
+            </Link>
+          )
+        })}
       </div>
     </section>
   )

@@ -32,6 +32,10 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+          VITE_GOOGLE_SHEET_ID: ${{ vars.GOOGLE_SHEET_ID }}
+          VITE_ALLOWED_GOOGLE_EMAIL: ${{ vars.ALLOWED_GOOGLE_EMAIL }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
