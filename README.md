@@ -8,6 +8,10 @@ departamento admite un solo responsable activo, la salida real se registra por
 separado del vencimiento previsto y las mensualidades futuras se cancelan sin
 eliminar las deudas ya vencidas.
 
+Los departamentos se pueden crear y editar desde la aplicación. Cada inmueble
+mantiene nombre, dirección, descripción y estado; si tiene un alquiler activo,
+primero se debe finalizar ese alquiler antes de marcarlo inactivo o en mantenimiento.
+
 ## Tecnologías
 
 - React
