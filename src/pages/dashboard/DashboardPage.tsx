@@ -61,8 +61,13 @@ export function DashboardPage() {
         <div className="grid gap-3 lg:grid-cols-2">
           {departmentViews.map((department) => {
             const currentPayment = department.payments.find((payment) => isSameMonth(payment.period))
-            const overdueCount = department.payments.filter(
-              (payment) => payment.status === 'PENDIENTE' && isPeriodOverdue(payment.period),
+            const contractIds = new Set(data?.contracts
+              .filter((contract) => contract.departmentId === department.id)
+              .map((contract) => contract.id))
+            const overdueCount = payments.filter(
+              (payment) => contractIds.has(payment.contractId)
+                && payment.status === 'PENDIENTE'
+                && isPeriodOverdue(payment.period),
             ).length
             return (
               <Link

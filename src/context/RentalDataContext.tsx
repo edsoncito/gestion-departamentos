@@ -7,12 +7,23 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { loadRentalDatabase, updatePaymentRow } from '../services/google/sheetsClient'
+import {
+  createContractRows,
+  createTenantRow,
+  finalizeContractRows,
+  loadRentalDatabase,
+  updatePaymentRow,
+  updateTenantRow,
+} from '../services/google/sheetsClient'
 import type {
+  Contract,
+  ContractInput,
   DepartmentView,
   Payment,
   PaymentUpdate,
   RentalDatabase,
+  Tenant,
+  TenantInput,
 } from '../types/database'
 import { useGoogleSession } from './GoogleSessionContext'
 
@@ -21,8 +32,12 @@ interface RentalDataValue {
   departmentViews: DepartmentView[]
   error: string | null
   loading: boolean
+  assignTenant: (input: ContractInput) => Promise<void>
+  createTenant: (input: TenantInput) => Promise<string>
+  finalizeContract: (contract: Contract, actualExitDate: string) => Promise<number>
   refresh: () => Promise<void>
   savePayment: (payment: Payment, update: PaymentUpdate) => Promise<void>
+  updateTenant: (tenant: Tenant, input: TenantInput) => Promise<void>
 }
 
 const RentalDataContext = createContext<RentalDataValue | null>(null)
@@ -62,6 +77,54 @@ export function RentalDataProvider({ children }: { children: ReactNode }) {
     [accessToken, refresh],
   )
 
+  const createTenant = useCallback(
+    async (input: TenantInput) => {
+      if (!accessToken || !data) throw new Error('Los datos todavía no están disponibles.')
+      const tenantId = await createTenantRow(accessToken, data, input)
+      await refresh()
+      return tenantId
+    },
+    [accessToken, data, refresh],
+  )
+
+  const updateTenant = useCallback(
+    async (tenant: Tenant, input: TenantInput) => {
+      if (!accessToken || !data) throw new Error('Los datos todavía no están disponibles.')
+      if (data.tenants.some(
+        (item) => item.id !== tenant.id && item.documentId === input.documentId,
+      )) {
+        throw new Error('Ya existe otro inquilino con ese carné de identidad.')
+      }
+      await updateTenantRow(accessToken, tenant, input)
+      await refresh()
+    },
+    [accessToken, data, refresh],
+  )
+
+  const assignTenant = useCallback(
+    async (input: ContractInput) => {
+      if (!accessToken || !data) throw new Error('Los datos todavía no están disponibles.')
+      await createContractRows(accessToken, data, input)
+      await refresh()
+    },
+    [accessToken, data, refresh],
+  )
+
+  const finalizeContract = useCallback(
+    async (contract: Contract, actualExitDate: string) => {
+      if (!accessToken || !data) throw new Error('Los datos todavía no están disponibles.')
+      const cancelledPayments = await finalizeContractRows(
+        accessToken,
+        data,
+        contract,
+        actualExitDate,
+      )
+      await refresh()
+      return cancelledPayments
+    },
+    [accessToken, data, refresh],
+  )
+
   const departmentViews = useMemo<DepartmentView[]>(() => {
     if (!data) return []
     return data.departments.map((department) => {
@@ -80,8 +143,30 @@ export function RentalDataProvider({ children }: { children: ReactNode }) {
   }, [data])
 
   const value = useMemo<RentalDataValue>(
-    () => ({ data, departmentViews, error, loading, refresh, savePayment }),
-    [data, departmentViews, error, loading, refresh, savePayment],
+    () => ({
+      assignTenant,
+      createTenant,
+      data,
+      departmentViews,
+      error,
+      finalizeContract,
+      loading,
+      refresh,
+      savePayment,
+      updateTenant,
+    }),
+    [
+      assignTenant,
+      createTenant,
+      data,
+      departmentViews,
+      error,
+      finalizeContract,
+      loading,
+      refresh,
+      savePayment,
+      updateTenant,
+    ],
   )
 
   return (

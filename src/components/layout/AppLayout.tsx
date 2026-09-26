@@ -6,6 +6,7 @@ import { ThemeToggle } from '../ui/ThemeToggle'
 const navigation = [
   { label: 'Resumen', to: '/' },
   { label: 'Departamentos', to: '/departamentos' },
+  { label: 'Inquilinos', to: '/inquilinos' },
 ]
 
 export function AppLayout() {
@@ -75,7 +76,7 @@ export function AppLayout() {
         <Outlet />
       </main>
 
-      <nav aria-label="Navegación móvil" className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-2 border-t border-[var(--border)] bg-[var(--surface-elevated)] pb-[env(safe-area-inset-bottom)] md:hidden">
+      <nav aria-label="Navegación móvil" className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-3 border-t border-[var(--border)] bg-[var(--surface-elevated)] pb-[env(safe-area-inset-bottom)] md:hidden">
         {navigation.map((item) => (
           <NavLink
             key={item.to}

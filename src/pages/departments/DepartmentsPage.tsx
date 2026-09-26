@@ -4,7 +4,7 @@ import { useRentalData } from '../../context/RentalDataContext'
 import { formatDate, formatMoney, isPeriodOverdue, isSameMonth } from '../../utils/format'
 
 export function DepartmentsPage() {
-  const { departmentViews } = useRentalData()
+  const { data, departmentViews } = useRentalData()
 
   return (
     <section className="space-y-7">
@@ -17,8 +17,13 @@ export function DepartmentsPage() {
       <div className="overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
         {departmentViews.map((department, index) => {
           const currentPayment = department.payments.find((payment) => isSameMonth(payment.period))
-          const overdueCount = department.payments.filter(
-            (payment) => payment.status === 'PENDIENTE' && isPeriodOverdue(payment.period),
+          const contractIds = new Set(data?.contracts
+            .filter((contract) => contract.departmentId === department.id)
+            .map((contract) => contract.id))
+          const overdueCount = (data?.payments ?? []).filter(
+            (payment) => contractIds.has(payment.contractId)
+              && payment.status === 'PENDIENTE'
+              && isPeriodOverdue(payment.period),
           ).length
           return (
             <Link

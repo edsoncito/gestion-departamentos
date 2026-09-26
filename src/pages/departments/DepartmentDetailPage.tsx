@@ -17,10 +17,14 @@ type EditorMode = 'register' | 'edit'
 
 export function DepartmentDetailPage() {
   const { departmentId } = useParams()
-  const { departmentViews, savePayment } = useRentalData()
+  const { data, departmentViews, savePayment } = useRentalData()
   const department = departmentViews.find((item) => item.id === departmentId)
-  const payments = department?.payments ?? []
-  const currentPayment = payments.find((payment) => isSameMonth(payment.period))
+  const departmentContracts = data?.contracts.filter(
+    (contract) => contract.departmentId === departmentId,
+  ) ?? []
+  const departmentContractIds = new Set(departmentContracts.map((contract) => contract.id))
+  const payments = data?.payments.filter((payment) => departmentContractIds.has(payment.contractId)) ?? []
+  const currentPayment = department?.payments.find((payment) => isSameMonth(payment.period))
   const duePendingPayments = payments
     .filter((payment) => payment.status === 'PENDIENTE' && isPeriodDue(payment.period))
     .sort((left, right) => left.period.localeCompare(right.period))
@@ -34,6 +38,8 @@ export function DepartmentDetailPage() {
   const visiblePayments = [...payments].sort((left, right) =>
     right.period.localeCompare(left.period),
   )
+  const contractHistory = [...departmentContracts]
+    .sort((left, right) => right.startDate.localeCompare(left.startDate))
 
   const [showEditor, setShowEditor] = useState(false)
   const [editorMode, setEditorMode] = useState<EditorMode>('register')
@@ -195,10 +201,11 @@ export function DepartmentDetailPage() {
           </p>
         </div>
         <div className="overflow-x-auto border border-[var(--border)] bg-[var(--surface)]">
-          <table className="w-full min-w-[980px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[1100px] border-collapse text-left text-sm">
             <thead className="bg-[var(--primary)] text-[var(--on-primary)]">
               <tr>
                 <th className="px-4 py-3">Periodo</th>
+                <th className="px-4 py-3">Inquilino</th>
                 <th className="px-4 py-3">Esperado</th>
                 <th className="px-4 py-3">Pagado</th>
                 <th className="px-4 py-3">Fecha</th>
@@ -211,15 +218,18 @@ export function DepartmentDetailPage() {
             <tbody>
               {visiblePayments.map((payment) => {
                 const paymentIsDue = isPeriodDue(payment.period)
+                const paymentContract = departmentContracts.find((contract) => contract.id === payment.contractId)
+                const paymentTenant = data?.tenants.find((tenant) => tenant.id === paymentContract?.tenantId)
                 return (
                   <tr key={payment.id} className="border-t border-[var(--border-soft)] even:bg-[var(--surface-elevated)]">
                     <td className="px-4 py-3 font-bold capitalize">{formatPeriod(payment.period)}</td>
+                    <td className="px-4 py-3">{paymentTenant?.fullName ?? '—'}</td>
                     <td className="px-4 py-3">{formatMoney(payment.expectedAmount)}</td>
                     <td className="px-4 py-3">{payment.paidAmount == null ? '—' : formatMoney(payment.paidAmount)}</td>
                     <td className="px-4 py-3">{formatDate(payment.paidAt)}</td>
                     <td className="px-4 py-3">{payment.method || '—'}</td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-1 text-[11px] font-bold ${payment.status === 'PAGADO' ? 'bg-[var(--success-bg)] text-[var(--success-text)]' : paymentIsDue ? 'bg-[var(--warning-bg)] text-[var(--warning-text)]' : 'bg-[var(--neutral-bg)] text-[var(--neutral-text)]'}`}>
+                      <span className={`px-2 py-1 text-[11px] font-bold ${payment.status === 'PAGADO' ? 'bg-[var(--success-bg)] text-[var(--success-text)]' : payment.status === 'CANCELADO' ? 'bg-[var(--neutral-bg)] text-[var(--neutral-text)]' : paymentIsDue ? 'bg-[var(--warning-bg)] text-[var(--warning-text)]' : 'bg-[var(--neutral-bg)] text-[var(--neutral-text)]'}`}>
                         {payment.status}
                       </span>
                     </td>
@@ -235,7 +245,7 @@ export function DepartmentDetailPage() {
                         >
                           Editar
                         </button>
-                      ) : paymentIsDue ? (
+                      ) : payment.status === 'PENDIENTE' && paymentIsDue ? (
                         <button
                           type="button"
                           onClick={() => openRegisterPayment(payment)}
@@ -243,6 +253,8 @@ export function DepartmentDetailPage() {
                         >
                           Registrar
                         </button>
+                      ) : payment.status === 'CANCELADO' ? (
+                        <span className="text-xs text-[var(--muted)]">Cancelado</span>
                       ) : (
                         <span className="text-xs text-[var(--muted)]">Aún no vence</span>
                       )}
@@ -250,6 +262,33 @@ export function DepartmentDetailPage() {
                   </tr>
                 )
               })}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <div className="mb-3">
+          <h3 className="text-lg font-bold">Historial de inquilinos</h3>
+          <p className="mt-1 text-sm text-[var(--muted)]">Ocupaciones actuales y anteriores de este departamento.</p>
+        </div>
+        <div className="overflow-x-auto border border-[var(--border)] bg-[var(--surface)]">
+          <table className="w-full min-w-[760px] border-collapse text-left text-sm">
+            <thead className="bg-[var(--primary)] text-[var(--on-primary)]"><tr><th className="px-4 py-3">Inquilino</th><th className="px-4 py-3">Ingreso</th><th className="px-4 py-3">Vencimiento previsto</th><th className="px-4 py-3">Salida real</th><th className="px-4 py-3">Estado</th></tr></thead>
+            <tbody>
+              {contractHistory.map((contract) => {
+                const tenant = data?.tenants.find((item) => item.id === contract.tenantId)
+                return (
+                  <tr key={contract.id} className="border-t border-[var(--border-soft)] even:bg-[var(--surface-elevated)]">
+                    <td className="px-4 py-3"><Link to={`/inquilinos/${contract.tenantId}`} className="font-bold text-[var(--primary)] hover:underline">{tenant?.fullName ?? contract.tenantId}</Link></td>
+                    <td className="px-4 py-3">{formatDate(contract.startDate)}</td>
+                    <td className="px-4 py-3">{formatDate(contract.endDate)}</td>
+                    <td className="px-4 py-3">{formatDate(contract.actualExitDate)}</td>
+                    <td className="px-4 py-3">{contract.status}</td>
+                  </tr>
+                )
+              })}
+              {!contractHistory.length ? <tr><td colSpan={5} className="px-4 py-8 text-center text-[var(--muted)]">Sin contratos registrados.</td></tr> : null}
             </tbody>
           </table>
         </div>

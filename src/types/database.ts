@@ -1,6 +1,6 @@
 export type ActiveStatus = 'ACTIVO' | 'INACTIVO'
 export type ContractStatus = 'ACTIVO' | 'FINALIZADO' | 'CANCELADO'
-export type PaymentStatus = 'PAGADO' | 'PENDIENTE'
+export type PaymentStatus = 'PAGADO' | 'PENDIENTE' | 'CANCELADO'
 export type PaymentMethod = 'QR' | 'EFECTIVO' | 'TRANSFERENCIA' | 'OTRO' | ''
 
 export interface Department {
@@ -17,6 +17,7 @@ export interface Tenant {
   documentId: string
   phone: string
   status: ActiveStatus
+  rowNumber: number
 }
 
 export interface Contract {
@@ -30,6 +31,8 @@ export interface Contract {
   dueRule: 'ULTIMO_DIA_MES'
   status: ContractStatus
   notes: string
+  actualExitDate: string | null
+  rowNumber: number
 }
 
 export interface Payment {
@@ -50,6 +53,21 @@ export interface PaymentUpdate {
   paidAt: string | null
   method: PaymentMethod
   status: PaymentStatus
+  notes: string
+}
+
+export interface TenantInput {
+  fullName: string
+  documentId: string
+  phone: string
+}
+
+export interface ContractInput {
+  departmentId: string
+  tenantId: string
+  startDate: string
+  endDate: string
+  monthlyAmount: number
   notes: string
 }
 

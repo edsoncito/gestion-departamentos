@@ -3,6 +3,11 @@
 Aplicación web personal para administrar departamentos, contratos y pagos de
 alquiler.
 
+La gestión de inquilinos conserva el historial mediante contratos: cada
+departamento admite un solo responsable activo, la salida real se registra por
+separado del vencimiento previsto y las mensualidades futuras se cancelan sin
+eliminar las deudas ya vencidas.
+
 ## Tecnologías
 
 - React
@@ -50,6 +55,12 @@ Sheets después de que el usuario autoriza el acceso.
 La aplicación se abrirá en modo independiente. El service worker guarda únicamente
 los archivos estáticos de la interfaz; los tokens y las respuestas de Google Sheets
 no se almacenan para uso sin conexión.
+
+## Estructura de datos
+
+La pestaña `Contratos` utiliza la columna `K` (`fecha_salida_real`). El estado
+`CANCELADO` de `Pagos` representa mensualidades futuras anuladas al finalizar
+anticipadamente un alquiler.
 
 ## Despliegue
 
