@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { DepartmentEditorModal } from '../../components/departments/DepartmentEditorModal'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { useRentalData } from '../../context/RentalDataContext'
 import type { Payment, PaymentMethod, PaymentStatus } from '../../types/database'
@@ -17,7 +18,7 @@ type EditorMode = 'register' | 'edit'
 
 export function DepartmentDetailPage() {
   const { departmentId } = useParams()
-  const { data, departmentViews, savePayment } = useRentalData()
+  const { data, departmentViews, savePayment, updateDepartment } = useRentalData()
   const department = departmentViews.find((item) => item.id === departmentId)
   const departmentContracts = data?.contracts.filter(
     (contract) => contract.departmentId === departmentId,
@@ -42,6 +43,7 @@ export function DepartmentDetailPage() {
     .sort((left, right) => right.startDate.localeCompare(left.startDate))
 
   const [showEditor, setShowEditor] = useState(false)
+  const [showDepartmentEditor, setShowDepartmentEditor] = useState(false)
   const [editorMode, setEditorMode] = useState<EditorMode>('register')
   const [selectedPaymentId, setSelectedPaymentId] = useState('')
   const [paidAmount, setPaidAmount] = useState('')
@@ -134,11 +136,26 @@ export function DepartmentDetailPage() {
         ← Volver a departamentos
       </Link>
 
-      <PageHeader
-        eyebrow={department.id}
-        title={department.name}
-        description="Contrato, inquilino y registro mensual de pagos."
-      />
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <PageHeader
+          eyebrow={department.id}
+          title={department.name}
+          description={department.address || 'Sin dirección registrada'}
+        />
+        <button
+          type="button"
+          onClick={() => setShowDepartmentEditor(true)}
+          className="min-h-11 shrink-0 border border-[var(--border)] bg-[var(--surface)] px-5 text-sm font-bold hover:bg-[var(--surface-elevated)]"
+        >
+          Editar departamento
+        </button>
+      </div>
+
+      <div className="border border-[var(--border)] bg-[var(--surface)] p-4">
+        <p className="text-[11px] font-bold uppercase text-[var(--muted)]">Descripción del inmueble</p>
+        <p className="mt-2 text-sm">{department.description || 'Sin descripción registrada.'}</p>
+        <p className="mt-2 text-xs font-bold text-[var(--muted)]">ESTADO: {department.status}</p>
+      </div>
 
       <div className="grid gap-px overflow-hidden border border-[var(--border)] bg-[var(--border)] sm:grid-cols-3">
         <div className="bg-[var(--surface)] p-4">
@@ -419,6 +436,25 @@ export function DepartmentDetailPage() {
             </div>
           </div>
         </div>
+      ) : null}
+
+      {showDepartmentEditor ? (
+        <DepartmentEditorModal
+          eyebrow={department.id}
+          title="Editar departamento"
+          hasActiveContract={Boolean(department.contract)}
+          initialValue={{
+            name: department.name,
+            address: department.address,
+            description: department.description,
+            status: department.status,
+          }}
+          onClose={() => setShowDepartmentEditor(false)}
+          onSubmit={async (input) => {
+            await updateDepartment(department, input)
+            setShowDepartmentEditor(false)
+          }}
+        />
       ) : null}
     </section>
   )

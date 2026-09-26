@@ -3,6 +3,7 @@ import type {
   Contract,
   ContractInput,
   Department,
+  DepartmentInput,
   Payment,
   PaymentUpdate,
   RentalDatabase,
@@ -108,12 +109,13 @@ export async function loadRentalDatabase(accessToken: string): Promise<RentalDat
 
   const departments = departmentRows
     .filter((row) => row[0])
-    .map<Department>((row) => ({
+    .map<Department>((row, index) => ({
       id: text(row[0]),
       name: text(row[1]),
       address: text(row[2]),
       description: text(row[3]),
       status: text(row[4]) as Department['status'],
+      rowNumber: index + 2,
     }))
 
   const tenants = tenantRows
@@ -179,6 +181,48 @@ async function batchUpdateValues(
   )
 }
 
+export async function createDepartmentRow(
+  accessToken: string,
+  database: RentalDatabase,
+  input: DepartmentInput,
+) {
+  if (database.departments.some(
+    (item) => item.name.trim().toLowerCase() === input.name.trim().toLowerCase(),
+  )) {
+    throw new Error('Ya existe un departamento con ese nombre.')
+  }
+
+  const department: Department = {
+    id: nextId('DEP', database.departments.map((item) => item.id)),
+    ...input,
+    rowNumber: Math.max(1, ...database.departments.map((item) => item.rowNumber)) + 1,
+  }
+
+  await batchUpdateValues(accessToken, [{
+    range: `Departamentos!A${department.rowNumber}:E${department.rowNumber}`,
+    values: [[
+      department.id,
+      department.name,
+      department.address,
+      department.description,
+      department.status,
+    ]],
+  }])
+
+  return department.id
+}
+
+export async function updateDepartmentRow(
+  accessToken: string,
+  department: Department,
+  input: DepartmentInput,
+) {
+  await batchUpdateValues(accessToken, [{
+    range: `Departamentos!B${department.rowNumber}:E${department.rowNumber}`,
+    values: [[input.name, input.address, input.description, input.status]],
+  }])
+}
+
 export async function createTenantRow(
   accessToken: string,
   database: RentalDatabase,
@@ -220,6 +264,11 @@ export async function createContractRows(
 ) {
   const tenant = database.tenants.find((item) => item.id === input.tenantId)
   if (!tenant) throw new Error('El inquilino seleccionado ya no existe.')
+  const department = database.departments.find((item) => item.id === input.departmentId)
+  if (!department) throw new Error('El departamento seleccionado ya no existe.')
+  if (department.status !== 'ACTIVO') {
+    throw new Error('El departamento debe estar activo para asignarle un inquilino.')
+  }
   if (database.contracts.some((item) => item.tenantId === input.tenantId && item.status === 'ACTIVO')) {
     throw new Error('El inquilino ya tiene un contrato activo.')
   }

@@ -9,16 +9,20 @@ import {
 } from 'react'
 import {
   createContractRows,
+  createDepartmentRow,
   createTenantRow,
   finalizeContractRows,
   loadRentalDatabase,
   updatePaymentRow,
+  updateDepartmentRow,
   updateTenantRow,
 } from '../services/google/sheetsClient'
 import type {
   Contract,
   ContractInput,
   DepartmentView,
+  Department,
+  DepartmentInput,
   Payment,
   PaymentUpdate,
   RentalDatabase,
@@ -33,11 +37,13 @@ interface RentalDataValue {
   error: string | null
   loading: boolean
   assignTenant: (input: ContractInput) => Promise<void>
+  createDepartment: (input: DepartmentInput) => Promise<string>
   createTenant: (input: TenantInput) => Promise<string>
   finalizeContract: (contract: Contract, actualExitDate: string) => Promise<number>
   refresh: () => Promise<void>
   savePayment: (payment: Payment, update: PaymentUpdate) => Promise<void>
   updateTenant: (tenant: Tenant, input: TenantInput) => Promise<void>
+  updateDepartment: (department: Department, input: DepartmentInput) => Promise<void>
 }
 
 const RentalDataContext = createContext<RentalDataValue | null>(null)
@@ -83,6 +89,37 @@ export function RentalDataProvider({ children }: { children: ReactNode }) {
       const tenantId = await createTenantRow(accessToken, data, input)
       await refresh()
       return tenantId
+    },
+    [accessToken, data, refresh],
+  )
+
+  const createDepartment = useCallback(
+    async (input: DepartmentInput) => {
+      if (!accessToken || !data) throw new Error('Los datos todavía no están disponibles.')
+      const departmentId = await createDepartmentRow(accessToken, data, input)
+      await refresh()
+      return departmentId
+    },
+    [accessToken, data, refresh],
+  )
+
+  const updateDepartment = useCallback(
+    async (department: Department, input: DepartmentInput) => {
+      if (!accessToken || !data) throw new Error('Los datos todavía no están disponibles.')
+      if (data.departments.some(
+        (item) => item.id !== department.id
+          && item.name.trim().toLowerCase() === input.name.trim().toLowerCase(),
+      )) {
+        throw new Error('Ya existe otro departamento con ese nombre.')
+      }
+      const hasActiveContract = data.contracts.some(
+        (contract) => contract.departmentId === department.id && contract.status === 'ACTIVO',
+      )
+      if (hasActiveContract && input.status !== 'ACTIVO') {
+        throw new Error('Finalizá el alquiler activo antes de cambiar el estado del departamento.')
+      }
+      await updateDepartmentRow(accessToken, department, input)
+      await refresh()
     },
     [accessToken, data, refresh],
   )
@@ -145,6 +182,7 @@ export function RentalDataProvider({ children }: { children: ReactNode }) {
   const value = useMemo<RentalDataValue>(
     () => ({
       assignTenant,
+      createDepartment,
       createTenant,
       data,
       departmentViews,
@@ -154,9 +192,11 @@ export function RentalDataProvider({ children }: { children: ReactNode }) {
       refresh,
       savePayment,
       updateTenant,
+      updateDepartment,
     }),
     [
       assignTenant,
+      createDepartment,
       createTenant,
       data,
       departmentViews,
@@ -166,6 +206,7 @@ export function RentalDataProvider({ children }: { children: ReactNode }) {
       refresh,
       savePayment,
       updateTenant,
+      updateDepartment,
     ],
   )
 

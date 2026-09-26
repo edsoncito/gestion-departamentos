@@ -9,6 +9,14 @@ export interface Department {
   address: string
   description: string
   status: ActiveStatus | 'MANTENIMIENTO'
+  rowNumber: number
+}
+
+export interface DepartmentInput {
+  name: string
+  address: string
+  description: string
+  status: Department['status']
 }
 
 export interface Tenant {
