@@ -11,6 +11,14 @@
     <link rel="icon" href="/gestion-departamentos/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/gestion-departamentos/apple-touch-icon.png" />
     <link rel="manifest" href="/gestion-departamentos/manifest.webmanifest" />
+    <script>
+      try {
+        if (localStorage.getItem('rental-theme') === 'dark') {
+          document.documentElement.dataset.theme = 'dark'
+          document.querySelector('meta[name="theme-color"]').content = '#101713'
+        }
+      } catch (_) {}
+    </script>
     <meta
       name="description"
       content="Sistema personal para la gestión de departamentos y pagos de alquiler."

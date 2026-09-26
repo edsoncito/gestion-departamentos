@@ -34,17 +34,17 @@ export function DashboardPage() {
         description="Estado actual de los contratos y pagos registrados en Google Sheets."
       />
 
-      <div className="grid gap-px overflow-hidden border border-[#ccd4ce] bg-[#ccd4ce] md:grid-cols-3">
+      <div className="grid gap-px overflow-hidden border border-[var(--border)] bg-[var(--border)] md:grid-cols-3">
         {summaryItems.map((item) => (
           <article
             key={item.label}
-            className="bg-white p-5"
+            className="bg-[var(--surface)] p-5"
           >
-            <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#6a756e]">{item.label}</p>
-            <p className="mt-3 text-2xl font-bold tracking-[-0.03em] text-[#1f2823] sm:text-3xl">
+            <p className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">{item.label}</p>
+            <p className="mt-3 text-2xl font-bold tracking-[-0.03em] text-[var(--text)] sm:text-3xl">
               {loading && !data ? '—' : item.value}
             </p>
-            <p className="mt-2 text-xs text-[#6a756e]">{item.detail}</p>
+            <p className="mt-2 text-xs text-[var(--muted)]">{item.detail}</p>
           </article>
         ))}
       </div>
@@ -53,9 +53,9 @@ export function DashboardPage() {
         <div className="mb-3 flex items-end justify-between gap-4">
           <div>
             <h3 className="text-lg font-bold">Departamentos</h3>
-            <p className="mt-1 text-sm text-[#6a756e]">Vencimiento: último día de cada mes</p>
+            <p className="mt-1 text-sm text-[var(--muted)]">Vencimiento: último día de cada mes</p>
           </div>
-          <Link to="/departamentos" className="text-sm font-bold text-[#315f50] hover:underline">Ver todos</Link>
+          <Link to="/departamentos" className="text-sm font-bold text-[var(--primary)] hover:underline">Ver todos</Link>
         </div>
 
         <div className="grid gap-3 lg:grid-cols-2">
@@ -68,24 +68,24 @@ export function DashboardPage() {
               <Link
                 key={department.id}
                 to={`/departamentos/${department.id}`}
-                className="group border border-[#ccd4ce] bg-white p-5 transition hover:border-[#6e8d80]"
+                className="group border border-[var(--border)] bg-[var(--surface)] p-5 transition hover:border-[var(--primary)]"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-bold text-[#6a756e]">{department.id}</p>
-                    <h4 className="mt-1 text-lg font-bold group-hover:text-[#315f50]">{department.name}</h4>
-                    <p className="mt-1 text-sm text-[#6a756e]">{department.tenant?.fullName || 'Sin inquilino activo'}</p>
+                    <p className="text-xs font-bold text-[var(--muted)]">{department.id}</p>
+                    <h4 className="mt-1 text-lg font-bold group-hover:text-[var(--primary)]">{department.name}</h4>
+                    <p className="mt-1 text-sm text-[var(--muted)]">{department.tenant?.fullName || 'Sin inquilino activo'}</p>
                   </div>
-                  <span className={`px-2.5 py-1 text-[11px] font-bold ${overdueCount ? 'bg-[#f8dfdb] text-[#8a342c]' : currentPayment?.status === 'PAGADO' ? 'bg-[#e4f0e9] text-[#315f50]' : 'bg-[#fff1c9] text-[#775b12]'}`}>
+                  <span className={`px-2.5 py-1 text-[11px] font-bold ${overdueCount ? 'bg-[var(--danger-soft)] text-[var(--danger-text)]' : currentPayment?.status === 'PAGADO' ? 'bg-[var(--success-bg)] text-[var(--success-text)]' : 'bg-[var(--warning-bg)] text-[var(--warning-text)]'}`}>
                     {overdueCount ? `${overdueCount} ATRASADO${overdueCount === 1 ? '' : 'S'}` : currentPayment ? currentPayment.status : 'SIN REGISTRO'}
                   </span>
                 </div>
-                <div className="mt-5 flex items-end justify-between border-t border-[#e1e5e2] pt-4">
+                <div className="mt-5 flex items-end justify-between border-t border-[var(--border-soft)] pt-4">
                   <div>
-                    <p className="text-[11px] uppercase tracking-[0.06em] text-[#758079]">Alquiler mensual</p>
+                    <p className="text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">Alquiler mensual</p>
                     <p className="mt-1 font-bold">{formatMoney(department.contract?.monthlyAmount ?? 0)}</p>
                   </div>
-                  <p className="text-xs font-bold text-[#315f50]">Abrir detalle →</p>
+                  <p className="text-xs font-bold text-[var(--primary)]">Abrir detalle →</p>
                 </div>
               </Link>
             )
@@ -94,7 +94,7 @@ export function DashboardPage() {
       </div>
 
       {pendingPayments[0] ? (
-        <p className="text-xs text-[#758079]">
+        <p className="text-xs text-[var(--muted)]">
           Próximo registro pendiente: {formatPeriod(pendingPayments[0].period)}.
         </p>
       ) : null}

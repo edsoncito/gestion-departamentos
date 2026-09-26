@@ -111,7 +111,7 @@ export function DepartmentDetailPage() {
         <h2 className="text-2xl font-bold">Departamento no encontrado</h2>
         <Link
           to="/departamentos"
-          className="mt-5 inline-block font-bold text-[#315f50] hover:underline"
+          className="mt-5 inline-block font-bold text-[var(--primary)] hover:underline"
         >
           Volver
         </Link>
@@ -123,7 +123,7 @@ export function DepartmentDetailPage() {
     <section className="space-y-7">
       <Link
         to="/departamentos"
-        className="inline-flex text-sm font-bold text-[#315f50] hover:underline"
+        className="inline-flex text-sm font-bold text-[var(--primary)] hover:underline"
       >
         ← Volver a departamentos
       </Link>
@@ -134,28 +134,28 @@ export function DepartmentDetailPage() {
         description="Contrato, inquilino y registro mensual de pagos."
       />
 
-      <div className="grid gap-px overflow-hidden border border-[#ccd4ce] bg-[#ccd4ce] sm:grid-cols-3">
-        <div className="bg-white p-4">
-          <p className="text-[11px] font-bold uppercase text-[#758079]">Inquilino</p>
+      <div className="grid gap-px overflow-hidden border border-[var(--border)] bg-[var(--border)] sm:grid-cols-3">
+        <div className="bg-[var(--surface)] p-4">
+          <p className="text-[11px] font-bold uppercase text-[var(--muted)]">Inquilino</p>
           <p className="mt-2 font-bold">{department.tenant?.fullName ?? '—'}</p>
-          <p className="mt-1 text-xs text-[#657069]">Tel. {department.tenant?.phone ?? '—'}</p>
+          <p className="mt-1 text-xs text-[var(--muted)]">Tel. {department.tenant?.phone ?? '—'}</p>
         </div>
-        <div className="bg-white p-4">
-          <p className="text-[11px] font-bold uppercase text-[#758079]">Alquiler mensual</p>
+        <div className="bg-[var(--surface)] p-4">
+          <p className="text-[11px] font-bold uppercase text-[var(--muted)]">Alquiler mensual</p>
           <p className="mt-2 text-xl font-bold">{formatMoney(department.contract?.monthlyAmount ?? 0)}</p>
-          <p className="mt-1 text-xs text-[#657069]">Vence el último día del mes</p>
+          <p className="mt-1 text-xs text-[var(--muted)]">Vence el último día del mes</p>
         </div>
-        <div className="bg-white p-4">
-          <p className="text-[11px] font-bold uppercase text-[#758079]">Contrato</p>
+        <div className="bg-[var(--surface)] p-4">
+          <p className="text-[11px] font-bold uppercase text-[var(--muted)]">Contrato</p>
           <p className="mt-2 font-bold">Hasta {formatDate(department.contract?.endDate ?? null)}</p>
-          <p className="mt-1 text-xs text-[#657069]">Estado: {department.contract?.status ?? '—'}</p>
+          <p className="mt-1 text-xs text-[var(--muted)]">Estado: {department.contract?.status ?? '—'}</p>
         </div>
       </div>
 
-      <section className="border border-[#ccd4ce] bg-white p-5">
+      <section className="border border-[var(--border)] bg-[var(--surface)] p-5">
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#6a756e]">
+            <p className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">
               Situación de pago
             </p>
             <h3 className="mt-1 text-xl font-bold">
@@ -163,7 +163,7 @@ export function DepartmentDetailPage() {
                 ? `${duePendingPayments.length} mensualidad${duePendingPayments.length === 1 ? '' : 'es'} por cobrar`
                 : 'Todo al día'}
             </h3>
-            <p className="mt-1 text-sm text-[#657069]">
+            <p className="mt-1 text-sm text-[var(--muted)]">
               {duePendingPayments.length
                 ? `${overdueCount} atrasada${overdueCount === 1 ? '' : 's'} · ${formatMoney(pendingTotal)} pendiente${duePendingPayments.length === 1 ? '' : 's'}`
                 : currentPayment?.status === 'PAGADO'
@@ -175,12 +175,12 @@ export function DepartmentDetailPage() {
             <button
               type="button"
               onClick={() => openRegisterPayment()}
-              className="min-h-11 bg-[#315f50] px-5 text-sm font-bold text-white hover:bg-[#274c40]"
+              className="min-h-11 bg-[var(--primary)] px-5 text-sm font-bold text-[var(--on-primary)] hover:bg-[var(--primary-hover)]"
             >
               Registrar pago
             </button>
           ) : (
-            <span className="bg-[#e4f0e9] px-4 py-3 text-sm font-bold text-[#315f50]">
+            <span className="bg-[var(--success-bg)] px-4 py-3 text-sm font-bold text-[var(--success-text)]">
               ✓ Sin pagos pendientes
             </span>
           )}
@@ -190,13 +190,13 @@ export function DepartmentDetailPage() {
       <section>
         <div className="mb-3">
           <h3 className="text-lg font-bold">Historial de pagos</h3>
-          <p className="mt-1 text-sm text-[#6a756e]">
+          <p className="mt-1 text-sm text-[var(--muted)]">
             Podés registrar meses atrasados y editar monto, fecha, método, estado u observaciones.
           </p>
         </div>
-        <div className="overflow-x-auto border border-[#ccd4ce] bg-white">
+        <div className="overflow-x-auto border border-[var(--border)] bg-[var(--surface)]">
           <table className="w-full min-w-[980px] border-collapse text-left text-sm">
-            <thead className="bg-[#315f50] text-white">
+            <thead className="bg-[var(--primary)] text-[var(--on-primary)]">
               <tr>
                 <th className="px-4 py-3">Periodo</th>
                 <th className="px-4 py-3">Esperado</th>
@@ -212,18 +212,18 @@ export function DepartmentDetailPage() {
               {visiblePayments.map((payment) => {
                 const paymentIsDue = isPeriodDue(payment.period)
                 return (
-                  <tr key={payment.id} className="border-t border-[#e0e5e1] even:bg-[#f7f9f6]">
+                  <tr key={payment.id} className="border-t border-[var(--border-soft)] even:bg-[var(--surface-elevated)]">
                     <td className="px-4 py-3 font-bold capitalize">{formatPeriod(payment.period)}</td>
                     <td className="px-4 py-3">{formatMoney(payment.expectedAmount)}</td>
                     <td className="px-4 py-3">{payment.paidAmount == null ? '—' : formatMoney(payment.paidAmount)}</td>
                     <td className="px-4 py-3">{formatDate(payment.paidAt)}</td>
                     <td className="px-4 py-3">{payment.method || '—'}</td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-1 text-[11px] font-bold ${payment.status === 'PAGADO' ? 'bg-[#e4f0e9] text-[#315f50]' : paymentIsDue ? 'bg-[#fff1c9] text-[#775b12]' : 'bg-[#edf0ee] text-[#69736d]'}`}>
+                      <span className={`px-2 py-1 text-[11px] font-bold ${payment.status === 'PAGADO' ? 'bg-[var(--success-bg)] text-[var(--success-text)]' : paymentIsDue ? 'bg-[var(--warning-bg)] text-[var(--warning-text)]' : 'bg-[var(--neutral-bg)] text-[var(--neutral-text)]'}`}>
                         {payment.status}
                       </span>
                     </td>
-                    <td className="max-w-52 truncate px-4 py-3 text-[#657069]" title={payment.notes}>
+                    <td className="max-w-52 truncate px-4 py-3 text-[var(--muted)]" title={payment.notes}>
                       {payment.notes || '—'}
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -231,7 +231,7 @@ export function DepartmentDetailPage() {
                         <button
                           type="button"
                           onClick={() => preparePayment(payment, 'edit')}
-                          className="font-bold text-[#315f50] hover:underline"
+                          className="font-bold text-[var(--primary)] hover:underline"
                         >
                           Editar
                         </button>
@@ -239,12 +239,12 @@ export function DepartmentDetailPage() {
                         <button
                           type="button"
                           onClick={() => openRegisterPayment(payment)}
-                          className="font-bold text-[#315f50] hover:underline"
+                          className="font-bold text-[var(--primary)] hover:underline"
                         >
                           Registrar
                         </button>
                       ) : (
-                        <span className="text-xs text-[#8a938e]">Aún no vence</span>
+                        <span className="text-xs text-[var(--muted)]">Aún no vence</span>
                       )}
                     </td>
                   </tr>
@@ -257,13 +257,13 @@ export function DepartmentDetailPage() {
 
       {showEditor && selectedPayment ? (
         <div
-          className="fixed inset-0 z-30 overflow-y-auto bg-[#17201b]/60 px-4 py-6"
+          className="fixed inset-0 z-30 overflow-y-auto bg-[var(--overlay)] px-4 py-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby="payment-title"
         >
-          <div className="mx-auto w-full max-w-lg bg-white p-6 shadow-2xl">
-            <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#66716b]">
+          <div className="mx-auto w-full max-w-lg bg-[var(--surface)] p-6 text-[var(--text)] shadow-2xl">
+            <p className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">
               {editorMode === 'register' ? 'Registrar pago' : 'Editar pago'}
             </p>
             <h3 id="payment-title" className="mt-1 text-2xl font-bold capitalize">
@@ -276,7 +276,7 @@ export function DepartmentDetailPage() {
                 <select
                   value={selectedPayment.id}
                   onChange={(event) => selectPendingPayment(event.target.value)}
-                  className="mt-2 min-h-11 w-full border border-[#bfc9c2] bg-white px-3 outline-none focus:border-[#315f50]"
+                  className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3 outline-none focus:border-[var(--primary)]"
                 >
                   {duePendingPayments.map((payment) => (
                     <option key={payment.id} value={payment.id}>
@@ -291,7 +291,7 @@ export function DepartmentDetailPage() {
                 <select
                   value={paymentStatus}
                   onChange={(event) => setPaymentStatus(event.target.value as PaymentStatus)}
-                  className="mt-2 min-h-11 w-full border border-[#bfc9c2] bg-white px-3 outline-none focus:border-[#315f50]"
+                  className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3 outline-none focus:border-[var(--primary)]"
                 >
                   <option value="PAGADO">Pagado</option>
                   <option value="PENDIENTE">Pendiente</option>
@@ -309,7 +309,7 @@ export function DepartmentDetailPage() {
                   value={paidAmount}
                   onChange={(event) => setPaidAmount(event.target.value)}
                   disabled={paymentStatus === 'PENDIENTE'}
-                  className="mt-2 min-h-11 w-full border border-[#bfc9c2] px-3 outline-none focus:border-[#315f50] disabled:bg-[#edf0ee]"
+                  className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3 outline-none focus:border-[var(--primary)] disabled:bg-[var(--neutral-bg)]"
                 />
               </label>
               <label className="block text-sm font-bold">
@@ -319,7 +319,7 @@ export function DepartmentDetailPage() {
                   value={paymentDate}
                   onChange={(event) => setPaymentDate(event.target.value)}
                   disabled={paymentStatus === 'PENDIENTE'}
-                  className="mt-2 min-h-11 w-full border border-[#bfc9c2] px-3 outline-none focus:border-[#315f50] disabled:bg-[#edf0ee]"
+                  className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3 outline-none focus:border-[var(--primary)] disabled:bg-[var(--neutral-bg)]"
                 />
               </label>
             </div>
@@ -330,7 +330,7 @@ export function DepartmentDetailPage() {
                 value={method}
                 onChange={(event) => setMethod(event.target.value as Exclude<PaymentMethod, ''>)}
                 disabled={paymentStatus === 'PENDIENTE'}
-                className="mt-2 min-h-11 w-full border border-[#bfc9c2] bg-white px-3 outline-none focus:border-[#315f50] disabled:bg-[#edf0ee]"
+                className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3 outline-none focus:border-[var(--primary)] disabled:bg-[var(--neutral-bg)]"
               >
                 <option value="QR">QR</option>
                 <option value="EFECTIVO">Efectivo</option>
@@ -346,18 +346,18 @@ export function DepartmentDetailPage() {
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
                 placeholder="Opcional"
-                className="mt-2 w-full resize-y border border-[#bfc9c2] px-3 py-2 outline-none focus:border-[#315f50]"
+                className="mt-2 w-full resize-y border border-[var(--border)] bg-[var(--surface)] px-3 py-2 outline-none focus:border-[var(--primary)]"
               />
             </label>
 
             {paymentStatus === 'PENDIENTE' ? (
-              <p className="mt-4 bg-[#fff8e5] px-3 py-2 text-xs leading-5 text-[#775b12]">
+              <p className="mt-4 bg-[var(--warning-soft)] px-3 py-2 text-xs leading-5 text-[var(--warning-text)]">
                 Al guardar como pendiente se quitarán el monto, la fecha y el método registrados.
               </p>
             ) : null}
 
             {saveError ? (
-              <p className="mt-4 bg-[#fff4f2] px-3 py-2 text-sm text-[#7d312b]">{saveError}</p>
+              <p className="mt-4 bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger-text)]">{saveError}</p>
             ) : null}
 
             <div className="mt-6 grid grid-cols-2 gap-3">
@@ -365,7 +365,7 @@ export function DepartmentDetailPage() {
                 type="button"
                 disabled={saving}
                 onClick={closeEditor}
-                className="min-h-11 border border-[#bfc9c2] text-sm font-bold hover:bg-[#f2f4ef]"
+                className="min-h-11 border border-[var(--border)] text-sm font-bold hover:bg-[var(--canvas)]"
               >
                 Cancelar
               </button>
@@ -373,7 +373,7 @@ export function DepartmentDetailPage() {
                 type="button"
                 disabled={saving}
                 onClick={() => void submitPayment()}
-                className="min-h-11 bg-[#315f50] text-sm font-bold text-white hover:bg-[#274c40] disabled:bg-[#aab5af]"
+                className="min-h-11 bg-[var(--primary)] text-sm font-bold text-[var(--on-primary)] hover:bg-[var(--primary-hover)] disabled:bg-[var(--disabled)]"
               >
                 {saving ? 'Guardando…' : editorMode === 'register' ? 'Registrar pago' : 'Guardar cambios'}
               </button>
