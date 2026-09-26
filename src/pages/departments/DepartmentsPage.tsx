@@ -28,7 +28,7 @@ export function DepartmentsPage() {
         <button
           type="button"
           onClick={() => setShowEditor(true)}
-          className="min-h-11 shrink-0 bg-[var(--primary)] px-5 text-sm font-bold text-[var(--on-primary)] hover:bg-[var(--primary-hover)]"
+          className="min-h-11 w-full shrink-0 bg-[var(--primary)] px-5 text-sm font-bold text-[var(--on-primary)] hover:bg-[var(--primary-hover)] sm:w-auto"
         >
           Nuevo departamento
         </button>

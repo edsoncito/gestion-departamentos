@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { ResponsiveSheet } from '../../components/ui/ResponsiveSheet'
 import { useRentalData } from '../../context/RentalDataContext'
 import type { ContractInput, TenantInput } from '../../types/database'
 import { formatDate, formatMoney, toDateInputValue } from '../../utils/format'
@@ -144,7 +145,7 @@ export function TenantDetailPage() {
       <Link to="/inquilinos" className="inline-flex text-sm font-bold text-[var(--primary)] hover:underline">← Volver a inquilinos</Link>
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <PageHeader eyebrow={tenant.id} title={tenant.fullName} description={`CI ${tenant.documentId} · Tel. ${tenant.phone}`} />
-        <button type="button" onClick={openEdit} className="min-h-11 shrink-0 border border-[var(--border)] bg-[var(--surface)] px-5 text-sm font-bold hover:border-[var(--primary)]">Editar datos</button>
+        <button type="button" onClick={openEdit} className="min-h-11 w-full shrink-0 border border-[var(--border)] bg-[var(--surface)] px-5 text-sm font-bold hover:border-[var(--primary)] sm:w-auto">Editar datos</button>
       </div>
 
       <section className="border border-[var(--border)] bg-[var(--surface)] p-5">
@@ -158,7 +159,7 @@ export function TenantDetailPage() {
                 : 'El inquilino está disponible para una nueva asignación.'}
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="grid w-full gap-3 sm:flex sm:w-auto sm:flex-wrap">
             {activeContract && currentDepartment ? (
               <>
                 <Link to={`/departamentos/${currentDepartment.id}`} className="inline-flex min-h-11 items-center border border-[var(--border)] px-4 text-sm font-bold hover:border-[var(--primary)]">Ver departamento</Link>
@@ -178,7 +179,30 @@ export function TenantDetailPage() {
           <h3 className="text-lg font-bold">Historial de alquileres</h3>
           <p className="mt-1 text-sm text-[var(--muted)]">Los contratos finalizados se conservan junto con sus pagos.</p>
         </div>
-        <div className="overflow-x-auto border border-[var(--border)] bg-[var(--surface)]">
+        <div className="space-y-3 md:hidden">
+          {contracts.map((contract) => {
+            const department = data?.departments.find((item) => item.id === contract.departmentId)
+            return (
+              <article key={contract.id} className="border border-[var(--border)] bg-[var(--surface)] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase text-[var(--muted)]">Departamento</p>
+                    <p className="mt-1 font-bold">{department?.name ?? contract.departmentId}</p>
+                  </div>
+                  <span className={`px-2 py-1 text-[11px] font-bold ${contract.status === 'ACTIVO' ? 'bg-[var(--success-bg)] text-[var(--success-text)]' : 'bg-[var(--neutral-bg)] text-[var(--neutral-text)]'}`}>{contract.status}</span>
+                </div>
+                <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-[var(--border-soft)] pt-4 text-sm">
+                  <div><dt className="text-[11px] uppercase text-[var(--muted)]">Ingreso</dt><dd className="mt-1">{formatDate(contract.startDate)}</dd></div>
+                  <div><dt className="text-[11px] uppercase text-[var(--muted)]">Fin previsto</dt><dd className="mt-1">{formatDate(contract.endDate)}</dd></div>
+                  <div><dt className="text-[11px] uppercase text-[var(--muted)]">Salida real</dt><dd className="mt-1">{formatDate(contract.actualExitDate)}</dd></div>
+                  <div><dt className="text-[11px] uppercase text-[var(--muted)]">Mensual</dt><dd className="mt-1 font-bold">{formatMoney(contract.monthlyAmount)}</dd></div>
+                </dl>
+              </article>
+            )
+          })}
+          {!contracts.length ? <p className="border border-[var(--border)] bg-[var(--surface)] p-6 text-center text-sm text-[var(--muted)]">Todavía no tiene contratos registrados.</p> : null}
+        </div>
+        <div className="hidden overflow-x-auto border border-[var(--border)] bg-[var(--surface)] md:block">
           <table className="w-full min-w-[760px] border-collapse text-left text-sm">
             <thead className="bg-[var(--primary)] text-[var(--on-primary)]"><tr><th className="px-4 py-3">Departamento</th><th className="px-4 py-3">Ingreso</th><th className="px-4 py-3">Vencimiento previsto</th><th className="px-4 py-3">Salida real</th><th className="px-4 py-3">Mensual</th><th className="px-4 py-3">Estado</th></tr></thead>
             <tbody>
@@ -193,8 +217,7 @@ export function TenantDetailPage() {
       </section>
 
       {showEdit ? (
-        <div className="fixed inset-0 z-30 overflow-y-auto bg-[var(--overlay)] px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="edit-tenant-title">
-          <div className="mx-auto w-full max-w-lg bg-[var(--surface)] p-6 shadow-2xl">
+        <ResponsiveSheet titleId="edit-tenant-title">
             <h3 id="edit-tenant-title" className="text-2xl font-bold">Editar inquilino</h3>
             <div className="mt-5 space-y-4">
               <label className="block text-sm font-bold">Nombre completo<input value={tenantForm.fullName} onChange={(event) => setTenantForm({ ...tenantForm, fullName: event.target.value })} className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3 outline-none focus:border-[var(--primary)]" /></label>
@@ -203,13 +226,11 @@ export function TenantDetailPage() {
             </div>
             {saveError ? <p className="mt-4 bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger-text)]">{saveError}</p> : null}
             <div className="mt-6 grid grid-cols-2 gap-3"><button type="button" disabled={saving} onClick={() => setShowEdit(false)} className="min-h-11 border border-[var(--border)] font-bold">Cancelar</button><button type="button" disabled={saving} onClick={() => void submitEdit()} className="min-h-11 bg-[var(--primary)] font-bold text-[var(--on-primary)] disabled:bg-[var(--disabled)]">{saving ? 'Guardando…' : 'Guardar'}</button></div>
-          </div>
-        </div>
+        </ResponsiveSheet>
       ) : null}
 
       {showAssignment ? (
-        <div className="fixed inset-0 z-30 overflow-y-auto bg-[var(--overlay)] px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="assign-title">
-          <div className="mx-auto w-full max-w-lg bg-[var(--surface)] p-6 shadow-2xl">
+        <ResponsiveSheet titleId="assign-title">
             <p className="text-xs font-bold uppercase text-[var(--muted)]">Nuevo contrato</p><h3 id="assign-title" className="mt-1 text-2xl font-bold">Asignar departamento</h3>
             <div className="mt-5 space-y-4">
               <label className="block text-sm font-bold">Departamento<select value={assignment.departmentId} onChange={(event) => setAssignment({ ...assignment, departmentId: event.target.value })} className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3"><option value="">Seleccionar</option>{availableDepartments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</select></label>
@@ -220,20 +241,17 @@ export function TenantDetailPage() {
             <p className="mt-4 bg-[var(--warning-soft)] px-3 py-2 text-xs text-[var(--warning-text)]">Se crearán automáticamente las mensualidades desde el mes de ingreso hasta el vencimiento previsto.</p>
             {saveError ? <p className="mt-4 bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger-text)]">{saveError}</p> : null}
             <div className="mt-6 grid grid-cols-2 gap-3"><button type="button" disabled={saving} onClick={() => setShowAssignment(false)} className="min-h-11 border border-[var(--border)] font-bold">Cancelar</button><button type="button" disabled={saving} onClick={() => void submitAssignment()} className="min-h-11 bg-[var(--primary)] font-bold text-[var(--on-primary)] disabled:bg-[var(--disabled)]">{saving ? 'Asignando…' : 'Crear contrato'}</button></div>
-          </div>
-        </div>
+        </ResponsiveSheet>
       ) : null}
 
       {showFinalize && activeContract ? (
-        <div className="fixed inset-0 z-30 overflow-y-auto bg-[var(--overlay)] px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="finalize-title">
-          <div className="mx-auto w-full max-w-lg bg-[var(--surface)] p-6 shadow-2xl">
+        <ResponsiveSheet titleId="finalize-title">
             <p className="text-xs font-bold uppercase text-[var(--danger-text)]">Cerrar contrato</p><h3 id="finalize-title" className="mt-1 text-2xl font-bold">Finalizar alquiler</h3>
             <p className="mt-3 text-sm leading-6 text-[var(--muted)]">Se conservarán los pagos realizados y las deudas ya vencidas. Las mensualidades cuyo vencimiento sea posterior a la salida quedarán canceladas.</p>
             <label className="mt-5 block text-sm font-bold">Fecha real de salida<input type="date" min={activeContract.startDate} max={toDateInputValue()} value={exitDate} onChange={(event) => setExitDate(event.target.value)} className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3" /></label>
             {saveError ? <p className="mt-4 bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger-text)]">{saveError}</p> : null}
             <div className="mt-6 grid grid-cols-2 gap-3"><button type="button" disabled={saving} onClick={() => setShowFinalize(false)} className="min-h-11 border border-[var(--border)] font-bold">Volver</button><button type="button" disabled={saving} onClick={() => void submitFinalize()} className="min-h-11 bg-[var(--danger-text)] font-bold text-white disabled:bg-[var(--disabled)]">{saving ? 'Finalizando…' : 'Finalizar alquiler'}</button></div>
-          </div>
-        </div>
+        </ResponsiveSheet>
       ) : null}
     </section>
   )

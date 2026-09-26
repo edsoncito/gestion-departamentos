@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { DepartmentEditorModal } from '../../components/departments/DepartmentEditorModal'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { ResponsiveSheet } from '../../components/ui/ResponsiveSheet'
 import { useRentalData } from '../../context/RentalDataContext'
 import type { Payment, PaymentMethod, PaymentStatus } from '../../types/database'
 import {
@@ -145,7 +146,7 @@ export function DepartmentDetailPage() {
         <button
           type="button"
           onClick={() => setShowDepartmentEditor(true)}
-          className="min-h-11 shrink-0 border border-[var(--border)] bg-[var(--surface)] px-5 text-sm font-bold hover:bg-[var(--surface-elevated)]"
+          className="min-h-11 w-full shrink-0 border border-[var(--border)] bg-[var(--surface)] px-5 text-sm font-bold hover:bg-[var(--surface-elevated)] sm:w-auto"
         >
           Editar departamento
         </button>
@@ -198,7 +199,7 @@ export function DepartmentDetailPage() {
             <button
               type="button"
               onClick={() => openRegisterPayment()}
-              className="min-h-11 bg-[var(--primary)] px-5 text-sm font-bold text-[var(--on-primary)] hover:bg-[var(--primary-hover)]"
+              className="min-h-11 w-full bg-[var(--primary)] px-5 text-sm font-bold text-[var(--on-primary)] hover:bg-[var(--primary-hover)] sm:w-auto"
             >
               Registrar pago
             </button>
@@ -217,7 +218,41 @@ export function DepartmentDetailPage() {
             Podés registrar meses atrasados y editar monto, fecha, método, estado u observaciones.
           </p>
         </div>
-        <div className="overflow-x-auto border border-[var(--border)] bg-[var(--surface)]">
+        <div className="space-y-3 md:hidden">
+          {visiblePayments.map((payment) => {
+            const paymentIsDue = isPeriodDue(payment.period)
+            const paymentContract = departmentContracts.find((contract) => contract.id === payment.contractId)
+            const paymentTenant = data?.tenants.find((tenant) => tenant.id === paymentContract?.tenantId)
+            return (
+              <article key={payment.id} className="border border-[var(--border)] bg-[var(--surface)] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase text-[var(--muted)]">Mensualidad</p>
+                    <h4 className="mt-1 font-bold capitalize">{formatPeriod(payment.period)}</h4>
+                    <p className="mt-1 text-xs text-[var(--muted)]">{paymentTenant?.fullName ?? '—'}</p>
+                  </div>
+                  <span className={`shrink-0 px-2 py-1 text-[11px] font-bold ${payment.status === 'PAGADO' ? 'bg-[var(--success-bg)] text-[var(--success-text)]' : payment.status === 'CANCELADO' ? 'bg-[var(--neutral-bg)] text-[var(--neutral-text)]' : paymentIsDue ? 'bg-[var(--warning-bg)] text-[var(--warning-text)]' : 'bg-[var(--neutral-bg)] text-[var(--neutral-text)]'}`}>
+                    {payment.status}
+                  </span>
+                </div>
+                <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-[var(--border-soft)] pt-4 text-sm">
+                  <div><dt className="text-[11px] uppercase text-[var(--muted)]">Esperado</dt><dd className="mt-1 font-bold">{formatMoney(payment.expectedAmount)}</dd></div>
+                  <div><dt className="text-[11px] uppercase text-[var(--muted)]">Pagado</dt><dd className="mt-1 font-bold">{payment.paidAmount == null ? '—' : formatMoney(payment.paidAmount)}</dd></div>
+                  <div><dt className="text-[11px] uppercase text-[var(--muted)]">Fecha</dt><dd className="mt-1">{formatDate(payment.paidAt)}</dd></div>
+                  <div><dt className="text-[11px] uppercase text-[var(--muted)]">Método</dt><dd className="mt-1">{payment.method || '—'}</dd></div>
+                </dl>
+                {payment.notes ? <p className="mt-3 text-xs leading-5 text-[var(--muted)]">{payment.notes}</p> : null}
+                {payment.status === 'PAGADO' ? (
+                  <button type="button" onClick={() => preparePayment(payment, 'edit')} className="mt-4 min-h-11 w-full border border-[var(--border)] font-bold text-[var(--primary)]">Editar pago</button>
+                ) : payment.status === 'PENDIENTE' && paymentIsDue ? (
+                  <button type="button" onClick={() => openRegisterPayment(payment)} className="mt-4 min-h-11 w-full bg-[var(--primary)] font-bold text-[var(--on-primary)]">Registrar pago</button>
+                ) : null}
+              </article>
+            )
+          })}
+          {!visiblePayments.length ? <p className="border border-[var(--border)] bg-[var(--surface)] p-6 text-center text-sm text-[var(--muted)]">Sin pagos registrados.</p> : null}
+        </div>
+        <div className="hidden overflow-x-auto border border-[var(--border)] bg-[var(--surface)] md:block">
           <table className="w-full min-w-[1100px] border-collapse text-left text-sm">
             <thead className="bg-[var(--primary)] text-[var(--on-primary)]">
               <tr>
@@ -289,7 +324,29 @@ export function DepartmentDetailPage() {
           <h3 className="text-lg font-bold">Historial de inquilinos</h3>
           <p className="mt-1 text-sm text-[var(--muted)]">Ocupaciones actuales y anteriores de este departamento.</p>
         </div>
-        <div className="overflow-x-auto border border-[var(--border)] bg-[var(--surface)]">
+        <div className="space-y-3 md:hidden">
+          {contractHistory.map((contract) => {
+            const tenant = data?.tenants.find((item) => item.id === contract.tenantId)
+            return (
+              <article key={contract.id} className="border border-[var(--border)] bg-[var(--surface)] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase text-[var(--muted)]">Inquilino</p>
+                    <Link to={`/inquilinos/${contract.tenantId}`} className="mt-1 block font-bold text-[var(--primary)]">{tenant?.fullName ?? contract.tenantId}</Link>
+                  </div>
+                  <span className="bg-[var(--neutral-bg)] px-2 py-1 text-[11px] font-bold text-[var(--neutral-text)]">{contract.status}</span>
+                </div>
+                <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-[var(--border-soft)] pt-4 text-sm">
+                  <div><dt className="text-[11px] uppercase text-[var(--muted)]">Ingreso</dt><dd className="mt-1">{formatDate(contract.startDate)}</dd></div>
+                  <div><dt className="text-[11px] uppercase text-[var(--muted)]">Fin previsto</dt><dd className="mt-1">{formatDate(contract.endDate)}</dd></div>
+                  <div><dt className="text-[11px] uppercase text-[var(--muted)]">Salida real</dt><dd className="mt-1">{formatDate(contract.actualExitDate)}</dd></div>
+                </dl>
+              </article>
+            )
+          })}
+          {!contractHistory.length ? <p className="border border-[var(--border)] bg-[var(--surface)] p-6 text-center text-sm text-[var(--muted)]">Sin contratos registrados.</p> : null}
+        </div>
+        <div className="hidden overflow-x-auto border border-[var(--border)] bg-[var(--surface)] md:block">
           <table className="w-full min-w-[760px] border-collapse text-left text-sm">
             <thead className="bg-[var(--primary)] text-[var(--on-primary)]"><tr><th className="px-4 py-3">Inquilino</th><th className="px-4 py-3">Ingreso</th><th className="px-4 py-3">Vencimiento previsto</th><th className="px-4 py-3">Salida real</th><th className="px-4 py-3">Estado</th></tr></thead>
             <tbody>
@@ -312,13 +369,7 @@ export function DepartmentDetailPage() {
       </section>
 
       {showEditor && selectedPayment ? (
-        <div
-          className="fixed inset-0 z-30 overflow-y-auto bg-[var(--overlay)] px-4 py-6"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="payment-title"
-        >
-          <div className="mx-auto w-full max-w-lg bg-[var(--surface)] p-6 text-[var(--text)] shadow-2xl">
+        <ResponsiveSheet titleId="payment-title">
             <p className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">
               {editorMode === 'register' ? 'Registrar pago' : 'Editar pago'}
             </p>
@@ -434,8 +485,7 @@ export function DepartmentDetailPage() {
                 {saving ? 'Guardando…' : editorMode === 'register' ? 'Registrar pago' : 'Guardar cambios'}
               </button>
             </div>
-          </div>
-        </div>
+        </ResponsiveSheet>
       ) : null}
 
       {showDepartmentEditor ? (

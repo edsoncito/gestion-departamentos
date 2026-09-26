@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { ResponsiveSheet } from '../../components/ui/ResponsiveSheet'
 import { useRentalData } from '../../context/RentalDataContext'
 import type { TenantInput } from '../../types/database'
 
@@ -55,7 +56,7 @@ export function TenantsPage() {
         <button
           type="button"
           onClick={() => { setForm(EMPTY_TENANT); setSaveError(null); setShowEditor(true) }}
-          className="min-h-11 shrink-0 bg-[var(--primary)] px-5 text-sm font-bold text-[var(--on-primary)] hover:bg-[var(--primary-hover)]"
+          className="min-h-11 w-full shrink-0 bg-[var(--primary)] px-5 text-sm font-bold text-[var(--on-primary)] hover:bg-[var(--primary-hover)] sm:w-auto"
         >
           Nuevo inquilino
         </button>
@@ -110,8 +111,7 @@ export function TenantsPage() {
       </div>
 
       {showEditor ? (
-        <div className="fixed inset-0 z-30 overflow-y-auto bg-[var(--overlay)] px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="new-tenant-title">
-          <div className="mx-auto w-full max-w-lg bg-[var(--surface)] p-6 text-[var(--text)] shadow-2xl">
+        <ResponsiveSheet titleId="new-tenant-title">
             <p className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">Nuevo registro</p>
             <h3 id="new-tenant-title" className="mt-1 text-2xl font-bold">Agregar inquilino</h3>
             <div className="mt-5 space-y-4">
@@ -130,8 +130,7 @@ export function TenantsPage() {
               <button type="button" disabled={saving} onClick={() => setShowEditor(false)} className="min-h-11 border border-[var(--border)] text-sm font-bold hover:bg-[var(--canvas)]">Cancelar</button>
               <button type="button" disabled={saving} onClick={() => void submitTenant()} className="min-h-11 bg-[var(--primary)] text-sm font-bold text-[var(--on-primary)] hover:bg-[var(--primary-hover)] disabled:bg-[var(--disabled)]">{saving ? 'Guardando…' : 'Guardar'}</button>
             </div>
-          </div>
-        </div>
+        </ResponsiveSheet>
       ) : null}
     </section>
   )

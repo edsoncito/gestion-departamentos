@@ -16,12 +16,12 @@ export function AppLayout() {
   return (
     <div className="min-h-screen bg-[var(--canvas)] pb-[calc(5rem+env(safe-area-inset-bottom))] text-[var(--text)] transition-colors md:pb-0">
       <header className="border-b border-[var(--border)] bg-[var(--surface-elevated)] pt-[env(safe-area-inset-top)] transition-colors">
-        <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-5 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:gap-5 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <span className="grid size-9 place-items-center bg-[var(--primary)] text-xs font-black text-[var(--on-primary)]">GA</span>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--muted-strong)]">Sistema privado</p>
-              <h1 className="text-base font-bold tracking-[-0.01em]">Gestión de alquileres</h1>
+              <p className="hidden text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--muted-strong)] sm:block">Sistema privado</p>
+              <h1 className="text-sm font-bold tracking-[-0.01em] sm:text-base"><span className="sm:hidden">Alquileres</span><span className="hidden sm:inline">Gestión de alquileres</span></h1>
             </div>
           </div>
 
@@ -45,7 +45,7 @@ export function AppLayout() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <ThemeToggle />
             <span className="hidden text-right sm:block">
               <span className="block text-xs font-bold">{user?.name}</span>
@@ -72,7 +72,7 @@ export function AppLayout() {
 
       {loading ? <div className="h-0.5 animate-pulse bg-[var(--primary)]" /> : null}
 
-      <main className="mx-auto w-full max-w-7xl px-4 py-7 sm:px-6 lg:px-8 lg:py-10">
+      <main className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-10">
         <Outlet />
       </main>
 

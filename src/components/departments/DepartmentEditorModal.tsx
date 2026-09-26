@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { DepartmentInput } from '../../types/database'
+import { ResponsiveSheet } from '../ui/ResponsiveSheet'
 
 interface DepartmentEditorModalProps {
   eyebrow: string
@@ -45,13 +46,7 @@ export function DepartmentEditorModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-30 overflow-y-auto bg-[var(--overlay)] px-4 py-6"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="department-editor-title"
-    >
-      <div className="mx-auto w-full max-w-lg bg-[var(--surface)] p-6 text-[var(--text)] shadow-2xl">
+    <ResponsiveSheet titleId="department-editor-title">
         <p className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">{eyebrow}</p>
         <h3 id="department-editor-title" className="mt-1 text-2xl font-bold">{title}</h3>
 
@@ -127,7 +122,6 @@ export function DepartmentEditorModal({
             {saving ? 'Guardando…' : 'Guardar'}
           </button>
         </div>
-      </div>
-    </div>
+    </ResponsiveSheet>
   )
 }
