@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { DepartmentPaymentsChart } from '../../components/dashboard/DepartmentPaymentsChart'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { useRentalData } from '../../context/RentalDataContext'
 import { formatMoney, formatPeriod, isPeriodDue, isPeriodOverdue, isSameMonth } from '../../utils/format'
@@ -25,6 +26,27 @@ export function DashboardPage() {
     { label: 'Total histórico', value: formatMoney(totalIncome), detail: `${payments.filter((item) => item.status === 'PAGADO').length} pagos registrados` },
     { label: 'Por cobrar', value: formatMoney(pendingAmount), detail: `${pendingPayments.length} mensualidades pendientes` },
   ]
+  const paymentsByDepartment = (data?.departments ?? [])
+    .map((department) => {
+      const contractIds = new Set(
+        data?.contracts
+          .filter((contract) => contract.departmentId === department.id)
+          .map((contract) => contract.id) ?? [],
+      )
+      const paidPayments = payments.filter(
+        (payment) => contractIds.has(payment.contractId) && payment.status === 'PAGADO',
+      )
+      return {
+        amount: paidPayments.reduce(
+          (total, payment) => total + (payment.paidAmount ?? 0),
+          0,
+        ),
+        id: department.id,
+        name: department.name,
+        paymentCount: paidPayments.length,
+      }
+    })
+    .sort((left, right) => right.amount - left.amount || left.name.localeCompare(right.name))
 
   return (
     <section className="space-y-7">
@@ -48,6 +70,8 @@ export function DashboardPage() {
           </article>
         ))}
       </div>
+
+      <DepartmentPaymentsChart items={paymentsByDepartment} />
 
       <div>
         <div className="mb-3 flex items-end justify-between gap-4">
