@@ -21,7 +21,7 @@ export function ResponsiveSheet({ children, titleId }: ResponsiveSheetProps) {
       aria-modal="true"
       aria-labelledby={titleId}
     >
-      <div className="max-h-[calc(100dvh_-_env(safe-area-inset-top)_-_0.75rem)] w-full overflow-y-auto overscroll-contain rounded-t-3xl bg-[var(--surface)] px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3 text-[var(--text)] shadow-2xl sm:max-h-[calc(100dvh_-_3rem)] sm:max-w-lg sm:rounded-lg sm:p-6">
+      <div className="max-h-[calc(100dvh_-_env(safe-area-inset-top)_-_0.75rem)] w-full overflow-y-auto overscroll-contain rounded-t-[28px] bg-[var(--surface)] px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3 text-[var(--text)] shadow-[var(--shadow)] sm:max-h-[calc(100dvh_-_3rem)] sm:max-w-lg sm:rounded-3xl sm:p-6">
         <div className="mx-auto mb-4 h-1 w-12 rounded-full bg-[var(--border)] sm:hidden" aria-hidden="true" />
         {children}
       </div>

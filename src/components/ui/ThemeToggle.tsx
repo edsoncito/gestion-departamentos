@@ -16,7 +16,7 @@ export function ThemeToggle() {
     }
     document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', nextTheme === 'dark' ? '#101713' : '#315f50')
+      ?.setAttribute('content', nextTheme === 'dark' ? '#0e1512' : '#1c5b45')
     try {
       localStorage.setItem(STORAGE_KEY, nextTheme)
     } catch {
@@ -33,7 +33,7 @@ export function ThemeToggle() {
       onClick={toggleTheme}
       aria-label={isDark ? 'Activar tema claro' : 'Activar tema oscuro'}
       title={isDark ? 'Activar tema claro' : 'Activar tema oscuro'}
-      className="inline-flex min-h-9 items-center gap-2 border border-[var(--border)] bg-[var(--surface)] px-3 text-xs font-bold text-[var(--muted)] transition hover:border-[var(--primary)] hover:text-[var(--text)]"
+      className="inline-flex min-h-9 items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3.5 text-xs font-bold text-[var(--muted)] transition hover:border-[var(--primary)] hover:text-[var(--text)]"
     >
       {isDark ? (
         <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8">

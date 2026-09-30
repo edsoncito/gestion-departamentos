@@ -1,17 +1,22 @@
-import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { DepartmentEditorModal } from '../../components/departments/DepartmentEditorModal'
+import { Icon } from '../../components/ui/Icon'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { PaymentCell, StripHeader, StripLegend } from '../../components/ui/PaymentStrip'
+import { cellLabel, findPayment } from '../../components/ui/paymentStripUtils'
 import { ResponsiveSheet } from '../../components/ui/ResponsiveSheet'
 import { useRentalData } from '../../context/RentalDataContext'
 import type { Payment, PaymentMethod, PaymentStatus } from '../../types/database'
 import {
+  capitalize,
   formatDate,
   formatMoney,
   formatPeriod,
   isPeriodDue,
   isPeriodOverdue,
   isSameMonth,
+  lastPeriods,
   toDateInputValue,
 } from '../../utils/format'
 
@@ -19,6 +24,7 @@ type EditorMode = 'register' | 'edit'
 
 export function DepartmentDetailPage() {
   const { departmentId } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { data, departmentViews, savePayment, updateDepartment } = useRentalData()
   const department = departmentViews.find((item) => item.id === departmentId)
   const departmentContracts = data?.contracts.filter(
@@ -43,6 +49,7 @@ export function DepartmentDetailPage() {
   const contractHistory = [...departmentContracts]
     .sort((left, right) => right.startDate.localeCompare(left.startDate))
 
+  const stripPeriods = lastPeriods(12)
   const [showEditor, setShowEditor] = useState(false)
   const [showDepartmentEditor, setShowDepartmentEditor] = useState(false)
   const [editorMode, setEditorMode] = useState<EditorMode>('register')
@@ -86,6 +93,24 @@ export function DepartmentDetailPage() {
     setShowEditor(false)
     setSaveError(null)
   }
+
+  const requestedPaymentId = searchParams.get('pago')
+  useEffect(() => {
+    if (!requestedPaymentId || !data) return
+    const requested = data.payments.find((payment) => payment.id === requestedPaymentId)
+    if (requested) {
+      setEditorMode(requested.status === 'PAGADO' ? 'edit' : 'register')
+      setSelectedPaymentId(requested.id)
+      setPaidAmount(String(requested.paidAmount ?? requested.expectedAmount))
+      setPaymentDate(requested.paidAt ?? toDateInputValue())
+      setMethod(requested.method || 'QR')
+      setPaymentStatus('PAGADO')
+      setNotes(requested.notes)
+      setSaveError(null)
+      setShowEditor(true)
+    }
+    setSearchParams({}, { replace: true })
+  }, [data, requestedPaymentId, setSearchParams])
 
   const submitPayment = async () => {
     if (!selectedPayment) return
@@ -132,9 +157,10 @@ export function DepartmentDetailPage() {
     <section className="space-y-7">
       <Link
         to="/departamentos"
-        className="inline-flex text-sm font-bold text-[var(--primary)] hover:underline"
+        className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--muted)] hover:text-[var(--primary)]"
       >
-        ← Volver a departamentos
+        <Icon name="back" size={16} />
+        Departamentos
       </Link>
 
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -146,40 +172,62 @@ export function DepartmentDetailPage() {
         <button
           type="button"
           onClick={() => setShowDepartmentEditor(true)}
-          className="min-h-11 w-full shrink-0 border border-[var(--border)] bg-[var(--surface)] px-5 text-sm font-bold hover:bg-[var(--surface-elevated)] sm:w-auto"
+          className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 border border-[var(--border)] bg-[var(--surface)] px-5 text-sm font-semibold hover:border-[var(--primary)] sm:w-auto"
         >
+          <Icon name="edit" size={16} />
           Editar departamento
         </button>
       </div>
 
-      <div className="border border-[var(--border)] bg-[var(--surface)] p-4">
-        <p className="text-[11px] font-bold uppercase text-[var(--muted)]">Descripción del inmueble</p>
+      <div className="panel p-4">
+        <p className="eyebrow">Descripción del inmueble</p>
         <p className="mt-2 text-sm">{department.description || 'Sin descripción registrada.'}</p>
         <p className="mt-2 text-xs font-bold text-[var(--muted)]">ESTADO: {department.status}</p>
       </div>
 
-      <div className="grid gap-px overflow-hidden border border-[var(--border)] bg-[var(--border)] sm:grid-cols-3">
-        <div className="bg-[var(--surface)] p-4">
-          <p className="text-[11px] font-bold uppercase text-[var(--muted)]">Inquilino</p>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="panel p-4">
+          <p className="eyebrow">Inquilino</p>
           <p className="mt-2 font-bold">{department.tenant?.fullName ?? '—'}</p>
           <p className="mt-1 text-xs text-[var(--muted)]">Tel. {department.tenant?.phone ?? '—'}</p>
         </div>
-        <div className="bg-[var(--surface)] p-4">
-          <p className="text-[11px] font-bold uppercase text-[var(--muted)]">Alquiler mensual</p>
+        <div className="panel p-4">
+          <p className="eyebrow">Alquiler mensual</p>
           <p className="mt-2 text-xl font-bold">{formatMoney(department.contract?.monthlyAmount ?? 0)}</p>
           <p className="mt-1 text-xs text-[var(--muted)]">Vence el último día del mes</p>
         </div>
-        <div className="bg-[var(--surface)] p-4">
-          <p className="text-[11px] font-bold uppercase text-[var(--muted)]">Contrato</p>
+        <div className="panel p-4">
+          <p className="eyebrow">Contrato</p>
           <p className="mt-2 font-bold">Hasta {formatDate(department.contract?.endDate ?? null)}</p>
           <p className="mt-1 text-xs text-[var(--muted)]">Estado: {department.contract?.status ?? '—'}</p>
         </div>
       </div>
 
-      <section className="border border-[var(--border)] bg-[var(--surface)] p-5">
+      <section className="panel p-5 sm:p-6" aria-labelledby="calendar-title">
+        <div className="flex flex-wrap items-start justify-between gap-x-5 gap-y-2">
+          <div>
+            <h3 id="calendar-title" className="font-display text-base font-semibold">Calendario de pagos</h3>
+            <p className="mt-0.5 text-[13px] text-[var(--muted)]">Últimos 12 meses. Tocá un mes para registrar o editar.</p>
+          </div>
+          <StripLegend />
+        </div>
+        <div className="mt-5 grid grid-cols-12 gap-[3px] sm:gap-1">
+          <StripHeader periods={stripPeriods} />
+          {stripPeriods.map((period) => (
+            <PaymentCell
+              key={period}
+              label={cellLabel(department.name, period)}
+              payment={findPayment(payments, period)}
+              onSelect={(payment) => preparePayment(payment, payment.status === 'PAGADO' ? 'edit' : 'register')}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="panel p-5">
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">
+            <p className="eyebrow">
               Situación de pago
             </p>
             <h3 className="mt-1 text-xl font-bold">
@@ -204,7 +252,7 @@ export function DepartmentDetailPage() {
               Registrar pago
             </button>
           ) : (
-            <span className="bg-[var(--success-bg)] px-4 py-3 text-sm font-bold text-[var(--success-text)]">
+            <span className="rounded-xl bg-[var(--success-bg)] px-4 py-3 text-sm font-bold text-[var(--success-text)]">
               ✓ Sin pagos pendientes
             </span>
           )}
@@ -224,14 +272,14 @@ export function DepartmentDetailPage() {
             const paymentContract = departmentContracts.find((contract) => contract.id === payment.contractId)
             const paymentTenant = data?.tenants.find((tenant) => tenant.id === paymentContract?.tenantId)
             return (
-              <article key={payment.id} className="border border-[var(--border)] bg-[var(--surface)] p-4">
+              <article key={payment.id} className="panel p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-[11px] font-bold uppercase text-[var(--muted)]">Mensualidad</p>
-                    <h4 className="mt-1 font-bold capitalize">{formatPeriod(payment.period)}</h4>
+                    <p className="eyebrow">Mensualidad</p>
+                    <h4 className="mt-1 font-bold">{capitalize(formatPeriod(payment.period))}</h4>
                     <p className="mt-1 text-xs text-[var(--muted)]">{paymentTenant?.fullName ?? '—'}</p>
                   </div>
-                  <span className={`shrink-0 px-2 py-1 text-[11px] font-bold ${payment.status === 'PAGADO' ? 'bg-[var(--success-bg)] text-[var(--success-text)]' : payment.status === 'CANCELADO' ? 'bg-[var(--neutral-bg)] text-[var(--neutral-text)]' : paymentIsDue ? 'bg-[var(--warning-bg)] text-[var(--warning-text)]' : 'bg-[var(--neutral-bg)] text-[var(--neutral-text)]'}`}>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${payment.status === 'PAGADO' ? 'bg-[var(--success-bg)] text-[var(--success-text)]' : payment.status === 'CANCELADO' ? 'bg-[var(--neutral-bg)] text-[var(--neutral-text)]' : paymentIsDue ? 'bg-[var(--warning-bg)] text-[var(--warning-text)]' : 'bg-[var(--neutral-bg)] text-[var(--neutral-text)]'}`}>
                     {payment.status}
                   </span>
                 </div>
@@ -250,21 +298,21 @@ export function DepartmentDetailPage() {
               </article>
             )
           })}
-          {!visiblePayments.length ? <p className="border border-[var(--border)] bg-[var(--surface)] p-6 text-center text-sm text-[var(--muted)]">Sin pagos registrados.</p> : null}
+          {!visiblePayments.length ? <p className="panel p-6 text-center text-sm text-[var(--muted)]">Sin pagos registrados.</p> : null}
         </div>
-        <div className="hidden overflow-x-auto border border-[var(--border)] bg-[var(--surface)] md:block">
-          <table className="w-full min-w-[1100px] border-collapse text-left text-sm">
-            <thead className="bg-[var(--primary)] text-[var(--on-primary)]">
+        <div className="hidden panel overflow-x-auto md:block">
+          <table className="w-full min-w-[980px] border-collapse text-left text-sm">
+            <thead className="bg-[var(--sunk)] text-xs uppercase tracking-wide text-[var(--muted)]">
               <tr>
-                <th className="px-4 py-3">Periodo</th>
-                <th className="px-4 py-3">Inquilino</th>
-                <th className="px-4 py-3">Esperado</th>
-                <th className="px-4 py-3">Pagado</th>
-                <th className="px-4 py-3">Fecha</th>
-                <th className="px-4 py-3">Método</th>
-                <th className="px-4 py-3">Estado</th>
-                <th className="px-4 py-3">Observaciones</th>
-                <th className="px-4 py-3 text-right">Acción</th>
+                <th className="px-4 py-3 font-semibold">Periodo</th>
+                <th className="px-4 py-3 font-semibold">Inquilino</th>
+                <th className="px-4 py-3 font-semibold">Esperado</th>
+                <th className="px-4 py-3 font-semibold">Pagado</th>
+                <th className="px-4 py-3 font-semibold">Fecha</th>
+                <th className="px-4 py-3 font-semibold">Método</th>
+                <th className="px-4 py-3 font-semibold">Estado</th>
+                <th className="px-4 py-3 font-semibold">Observaciones</th>
+                <th className="px-4 py-3 font-semibold text-right">Acción</th>
               </tr>
             </thead>
             <tbody>
@@ -274,14 +322,14 @@ export function DepartmentDetailPage() {
                 const paymentTenant = data?.tenants.find((tenant) => tenant.id === paymentContract?.tenantId)
                 return (
                   <tr key={payment.id} className="border-t border-[var(--border-soft)] even:bg-[var(--surface-elevated)]">
-                    <td className="px-4 py-3 font-bold capitalize">{formatPeriod(payment.period)}</td>
+                    <td className="px-4 py-3 font-bold">{capitalize(formatPeriod(payment.period))}</td>
                     <td className="px-4 py-3">{paymentTenant?.fullName ?? '—'}</td>
                     <td className="px-4 py-3">{formatMoney(payment.expectedAmount)}</td>
                     <td className="px-4 py-3">{payment.paidAmount == null ? '—' : formatMoney(payment.paidAmount)}</td>
                     <td className="px-4 py-3">{formatDate(payment.paidAt)}</td>
                     <td className="px-4 py-3">{payment.method || '—'}</td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-1 text-[11px] font-bold ${payment.status === 'PAGADO' ? 'bg-[var(--success-bg)] text-[var(--success-text)]' : payment.status === 'CANCELADO' ? 'bg-[var(--neutral-bg)] text-[var(--neutral-text)]' : paymentIsDue ? 'bg-[var(--warning-bg)] text-[var(--warning-text)]' : 'bg-[var(--neutral-bg)] text-[var(--neutral-text)]'}`}>
+                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${payment.status === 'PAGADO' ? 'bg-[var(--success-bg)] text-[var(--success-text)]' : payment.status === 'CANCELADO' ? 'bg-[var(--neutral-bg)] text-[var(--neutral-text)]' : paymentIsDue ? 'bg-[var(--warning-bg)] text-[var(--warning-text)]' : 'bg-[var(--neutral-bg)] text-[var(--neutral-text)]'}`}>
                         {payment.status}
                       </span>
                     </td>
@@ -328,13 +376,13 @@ export function DepartmentDetailPage() {
           {contractHistory.map((contract) => {
             const tenant = data?.tenants.find((item) => item.id === contract.tenantId)
             return (
-              <article key={contract.id} className="border border-[var(--border)] bg-[var(--surface)] p-4">
+              <article key={contract.id} className="panel p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-[11px] font-bold uppercase text-[var(--muted)]">Inquilino</p>
+                    <p className="eyebrow">Inquilino</p>
                     <Link to={`/inquilinos/${contract.tenantId}`} className="mt-1 block font-bold text-[var(--primary)]">{tenant?.fullName ?? contract.tenantId}</Link>
                   </div>
-                  <span className="bg-[var(--neutral-bg)] px-2 py-1 text-[11px] font-bold text-[var(--neutral-text)]">{contract.status}</span>
+                  <span className="bg-[var(--neutral-bg)] rounded-full px-2.5 py-1 text-[11px] font-bold text-[var(--neutral-text)]">{contract.status}</span>
                 </div>
                 <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-[var(--border-soft)] pt-4 text-sm">
                   <div><dt className="text-[11px] uppercase text-[var(--muted)]">Ingreso</dt><dd className="mt-1">{formatDate(contract.startDate)}</dd></div>
@@ -344,11 +392,11 @@ export function DepartmentDetailPage() {
               </article>
             )
           })}
-          {!contractHistory.length ? <p className="border border-[var(--border)] bg-[var(--surface)] p-6 text-center text-sm text-[var(--muted)]">Sin contratos registrados.</p> : null}
+          {!contractHistory.length ? <p className="panel p-6 text-center text-sm text-[var(--muted)]">Sin contratos registrados.</p> : null}
         </div>
-        <div className="hidden overflow-x-auto border border-[var(--border)] bg-[var(--surface)] md:block">
+        <div className="hidden panel overflow-x-auto md:block">
           <table className="w-full min-w-[760px] border-collapse text-left text-sm">
-            <thead className="bg-[var(--primary)] text-[var(--on-primary)]"><tr><th className="px-4 py-3">Inquilino</th><th className="px-4 py-3">Ingreso</th><th className="px-4 py-3">Vencimiento previsto</th><th className="px-4 py-3">Salida real</th><th className="px-4 py-3">Estado</th></tr></thead>
+            <thead className="bg-[var(--sunk)] text-xs uppercase tracking-wide text-[var(--muted)]"><tr><th className="px-4 py-3 font-semibold">Inquilino</th><th className="px-4 py-3 font-semibold">Ingreso</th><th className="px-4 py-3 font-semibold">Vencimiento previsto</th><th className="px-4 py-3 font-semibold">Salida real</th><th className="px-4 py-3 font-semibold">Estado</th></tr></thead>
             <tbody>
               {contractHistory.map((contract) => {
                 const tenant = data?.tenants.find((item) => item.id === contract.tenantId)
@@ -373,8 +421,8 @@ export function DepartmentDetailPage() {
             <p className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">
               {editorMode === 'register' ? 'Registrar pago' : 'Editar pago'}
             </p>
-            <h3 id="payment-title" className="mt-1 text-2xl font-bold capitalize">
-              {formatPeriod(selectedPayment.period)}
+            <h3 id="payment-title" className="mt-1 font-display text-2xl font-semibold">
+              {capitalize(formatPeriod(selectedPayment.period))}
             </h3>
 
             {editorMode === 'register' ? (
@@ -383,7 +431,7 @@ export function DepartmentDetailPage() {
                 <select
                   value={selectedPayment.id}
                   onChange={(event) => selectPendingPayment(event.target.value)}
-                  className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3 outline-none focus:border-[var(--primary)]"
+                  className="field-input mt-2"
                 >
                   {duePendingPayments.map((payment) => (
                     <option key={payment.id} value={payment.id}>
@@ -398,7 +446,7 @@ export function DepartmentDetailPage() {
                 <select
                   value={paymentStatus}
                   onChange={(event) => setPaymentStatus(event.target.value as PaymentStatus)}
-                  className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3 outline-none focus:border-[var(--primary)]"
+                  className="field-input mt-2"
                 >
                   <option value="PAGADO">Pagado</option>
                   <option value="PENDIENTE">Pendiente</option>
@@ -416,7 +464,7 @@ export function DepartmentDetailPage() {
                   value={paidAmount}
                   onChange={(event) => setPaidAmount(event.target.value)}
                   disabled={paymentStatus === 'PENDIENTE'}
-                  className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3 outline-none focus:border-[var(--primary)] disabled:bg-[var(--neutral-bg)]"
+                  className="field-input mt-2"
                 />
               </label>
               <label className="block text-sm font-bold">
@@ -426,7 +474,7 @@ export function DepartmentDetailPage() {
                   value={paymentDate}
                   onChange={(event) => setPaymentDate(event.target.value)}
                   disabled={paymentStatus === 'PENDIENTE'}
-                  className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3 outline-none focus:border-[var(--primary)] disabled:bg-[var(--neutral-bg)]"
+                  className="field-input mt-2"
                 />
               </label>
             </div>
@@ -437,7 +485,7 @@ export function DepartmentDetailPage() {
                 value={method}
                 onChange={(event) => setMethod(event.target.value as Exclude<PaymentMethod, ''>)}
                 disabled={paymentStatus === 'PENDIENTE'}
-                className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3 outline-none focus:border-[var(--primary)] disabled:bg-[var(--neutral-bg)]"
+                className="field-input mt-2"
               >
                 <option value="QR">QR</option>
                 <option value="EFECTIVO">Efectivo</option>
@@ -453,18 +501,18 @@ export function DepartmentDetailPage() {
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
                 placeholder="Opcional"
-                className="mt-2 w-full resize-y border border-[var(--border)] bg-[var(--surface)] px-3 py-2 outline-none focus:border-[var(--primary)]"
+                className="field-input mt-2 min-h-0 resize-y"
               />
             </label>
 
             {paymentStatus === 'PENDIENTE' ? (
-              <p className="mt-4 bg-[var(--warning-soft)] px-3 py-2 text-xs leading-5 text-[var(--warning-text)]">
+              <p className="mt-4 rounded-xl bg-[var(--warning-soft)] px-3 py-2 text-xs leading-5 text-[var(--warning-text)]">
                 Al guardar como pendiente se quitarán el monto, la fecha y el método registrados.
               </p>
             ) : null}
 
             {saveError ? (
-              <p className="mt-4 bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger-text)]">{saveError}</p>
+              <p className="mt-4 rounded-xl bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger-text)]">{saveError}</p>
             ) : null}
 
             <div className="mt-6 grid grid-cols-2 gap-3">

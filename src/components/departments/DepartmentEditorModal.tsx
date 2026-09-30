@@ -58,7 +58,7 @@ export function DepartmentEditorModal({
               onChange={(event) => setForm({ ...form, name: event.target.value })}
               autoFocus
               placeholder="Ej. Departamento 3"
-              className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3 outline-none focus:border-[var(--primary)]"
+              className="field-input mt-2"
             />
           </label>
           <label className="block text-sm font-bold">
@@ -67,7 +67,7 @@ export function DepartmentEditorModal({
               value={form.address}
               onChange={(event) => setForm({ ...form, address: event.target.value })}
               placeholder="Opcional"
-              className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3 outline-none focus:border-[var(--primary)]"
+              className="field-input mt-2"
             />
           </label>
           <label className="block text-sm font-bold">
@@ -77,7 +77,7 @@ export function DepartmentEditorModal({
               value={form.description}
               onChange={(event) => setForm({ ...form, description: event.target.value })}
               placeholder="Opcional"
-              className="mt-2 w-full resize-y border border-[var(--border)] bg-[var(--surface)] px-3 py-2 outline-none focus:border-[var(--primary)]"
+              className="field-input mt-2 min-h-0 resize-y"
             />
           </label>
           <label className="block text-sm font-bold">
@@ -86,7 +86,7 @@ export function DepartmentEditorModal({
               value={form.status}
               onChange={(event) => setForm({ ...form, status: event.target.value as DepartmentInput['status'] })}
               disabled={hasActiveContract}
-              className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3 outline-none focus:border-[var(--primary)] disabled:bg-[var(--neutral-bg)]"
+              className="field-input mt-2"
             >
               <option value="ACTIVO">Activo</option>
               <option value="MANTENIMIENTO">En mantenimiento</option>
@@ -96,12 +96,12 @@ export function DepartmentEditorModal({
         </div>
 
         {hasActiveContract ? (
-          <p className="mt-4 bg-[var(--warning-soft)] px-3 py-2 text-xs leading-5 text-[var(--warning-text)]">
+          <p className="mt-4 rounded-xl bg-[var(--warning-soft)] px-3 py-2 text-xs leading-5 text-[var(--warning-text)]">
             El departamento tiene un alquiler activo. Finalizalo antes de cambiar su estado.
           </p>
         ) : null}
         {saveError ? (
-          <p className="mt-4 bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger-text)]">{saveError}</p>
+          <p className="mt-4 rounded-xl bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger-text)]">{saveError}</p>
         ) : null}
 
         <div className="mt-6 grid grid-cols-2 gap-3">

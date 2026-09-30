@@ -1,132 +1,215 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { DepartmentPaymentsChart } from '../../components/dashboard/DepartmentPaymentsChart'
+import { PaymentCell, StripHeader, StripLegend } from '../../components/ui/PaymentStrip'
+import { cellLabel, findPayment } from '../../components/ui/paymentStripUtils'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { StatusPill } from '../../components/ui/StatusPill'
 import { useRentalData } from '../../context/RentalDataContext'
-import { formatMoney, formatPeriod, isPeriodDue, isPeriodOverdue, isSameMonth } from '../../utils/format'
+import type { Payment } from '../../types/database'
+import {
+  capitalize,
+  currentPeriod,
+  formatMoney,
+  formatPeriod,
+  isSameMonth,
+  lastPeriods,
+  monthsLate,
+  paymentState,
+  periodKey,
+} from '../../utils/format'
+
+const sum = <T,>(items: T[], pick: (item: T) => number) => items.reduce((total, item) => total + pick(item), 0)
+
+function todayLabel() {
+  return capitalize(
+    new Intl.DateTimeFormat('es-BO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date()),
+  )
+}
 
 export function DashboardPage() {
-  const { data, departmentViews, loading } = useRentalData()
+  const { data, loading } = useRentalData()
+  const navigate = useNavigate()
+  const departments = data?.departments ?? []
+  const contracts = data?.contracts ?? []
   const payments = data?.payments ?? []
-  const currentMonthIncome = payments
-    .filter((payment) => payment.status === 'PAGADO' && isSameMonth(payment.paidAt))
-    .reduce((total, payment) => total + (payment.paidAmount ?? 0), 0)
-  const totalIncome = payments.reduce(
-    (total, payment) => total + (payment.paidAmount ?? 0),
-    0,
+  const tenants = data?.tenants ?? []
+  const periods = lastPeriods(12)
+  const thisMonth = currentPeriod()
+
+  const contractById = new Map(contracts.map((contract) => [contract.id, contract]))
+  const departmentById = new Map(departments.map((department) => [department.id, department]))
+  const departmentOf = (payment: Payment) => departmentById.get(contractById.get(payment.contractId)?.departmentId ?? '')
+  const paymentsOf = (departmentId: string) =>
+    payments.filter((payment) => contractById.get(payment.contractId)?.departmentId === departmentId)
+
+  const currentPayments = payments
+    .filter((payment) => periodKey(payment.period) === thisMonth && payment.status !== 'CANCELADO')
+    .sort((left, right) => (departmentOf(left)?.name ?? '').localeCompare(departmentOf(right)?.name ?? ''))
+  const expected = sum(currentPayments, (payment) => payment.expectedAmount)
+  const collectedPeriod = sum(currentPayments.filter((payment) => payment.status === 'PAGADO'), (payment) => payment.paidAmount ?? 0)
+  const percent = expected ? Math.round((collectedPeriod / expected) * 100) : 0
+  const openCurrent = currentPayments.filter((payment) => payment.status !== 'PAGADO')
+  const latePayments = payments.filter((payment) => paymentState(payment) === 'late')
+  const lateNames = [...new Set(latePayments.map((payment) => departmentOf(payment)?.name).filter(Boolean))].join(', ')
+  const paidPayments = payments.filter((payment) => payment.status === 'PAGADO')
+  const collectedMonth = sum(
+    paidPayments.filter((payment) => isSameMonth(payment.paidAt)),
+    (payment) => payment.paidAmount ?? 0,
   )
-  const pendingPayments = payments.filter(
-    (payment) => payment.status === 'PENDIENTE' && isPeriodDue(payment.period),
-  )
-  const pendingAmount = pendingPayments.reduce(
-    (total, payment) => total + payment.expectedAmount,
-    0,
-  )
-  const summaryItems = [
-    { label: 'Cobrado este mes', value: formatMoney(currentMonthIncome), detail: 'Según la fecha real de pago' },
-    { label: 'Total histórico', value: formatMoney(totalIncome), detail: `${payments.filter((item) => item.status === 'PAGADO').length} pagos registrados` },
-    { label: 'Por cobrar', value: formatMoney(pendingAmount), detail: `${pendingPayments.length} mensualidades pendientes` },
-  ]
-  const paymentsByDepartment = (data?.departments ?? [])
+  const totalIncome = sum(paidPayments, (payment) => payment.paidAmount ?? 0)
+  const occupied = departments.filter((department) => contracts.some((contract) => contract.departmentId === department.id && contract.status === 'ACTIVO')).length
+  const todo = payments
+    .filter((payment) => ['late', 'due'].includes(paymentState(payment)))
+    .sort((left, right) => left.period.localeCompare(right.period))
+  const paymentsByDepartment = departments
     .map((department) => {
-      const contractIds = new Set(
-        data?.contracts
-          .filter((contract) => contract.departmentId === department.id)
-          .map((contract) => contract.id) ?? [],
-      )
-      const paidPayments = payments.filter(
-        (payment) => contractIds.has(payment.contractId) && payment.status === 'PAGADO',
-      )
-      return {
-        amount: paidPayments.reduce(
-          (total, payment) => total + (payment.paidAmount ?? 0),
-          0,
-        ),
-        id: department.id,
-        name: department.name,
-        paymentCount: paidPayments.length,
-      }
+      const paid = paymentsOf(department.id).filter((payment) => payment.status === 'PAGADO')
+      return { amount: sum(paid, (payment) => payment.paidAmount ?? 0), id: department.id, name: department.name, paymentCount: paid.length }
     })
     .sort((left, right) => right.amount - left.amount || left.name.localeCompare(right.name))
+  const monthName = new Intl.DateTimeFormat('es-BO', { month: 'short' }).format(new Date()).replace('.', '')
+  const dash = loading && !data
+  const line = 'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 border-t border-[var(--border-soft)] px-5 py-3.5 first:border-t-0'
 
   return (
-    <section className="space-y-7">
+    <section className="space-y-6">
       <PageHeader
-        eyebrow="Panel principal"
-        title="Resumen de alquileres"
-        description="Estado actual de los contratos y pagos registrados en Google Sheets."
+        eyebrow={todayLabel()}
+        title="Resumen"
+        description="Cobros, atrasos y ocupación de tus departamentos, según tu hoja de Google Sheets."
       />
 
-      <div className="grid gap-px overflow-hidden border border-[var(--border)] bg-[var(--border)] md:grid-cols-3">
-        {summaryItems.map((item) => (
-          <article
-            key={item.label}
-            className="bg-[var(--surface)] p-5"
-          >
-            <p className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">{item.label}</p>
-            <p className="mt-3 text-2xl font-bold tracking-[-0.03em] text-[var(--text)] sm:text-3xl">
-              {loading && !data ? '—' : item.value}
-            </p>
-            <p className="mt-2 text-xs text-[var(--muted)]">{item.detail}</p>
-          </article>
-        ))}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <section aria-labelledby="hero-title" className="flex min-w-0 flex-col justify-between gap-6 rounded-[22px] border border-[var(--hero-line)] bg-[var(--hero)] p-5 text-[var(--hero-ink)] sm:p-7">
+          <p id="hero-title" className="eyebrow !text-[var(--hero-dim)]">Mensualidades de {formatPeriod(`${thisMonth}-01`)}</p>
+          <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1">
+            <strong className="font-display text-[clamp(2.6rem,7vw,4rem)] font-bold leading-none tracking-[-0.03em]">{dash ? '—' : formatMoney(collectedPeriod)}</strong>
+            <span className="text-[var(--hero-dim)]">cobrados de {formatMoney(expected)}</span>
+          </div>
+          <div>
+            <div className="flex h-11 gap-1" role="img" aria-label={`${percent}% de las mensualidades de ${formatPeriod(`${thisMonth}-01`)} cobrado`}>
+              {currentPayments.map((payment) => {
+                const paid = payment.status === 'PAGADO'
+                return (
+                  <div
+                    key={payment.id}
+                    title={`${departmentOf(payment)?.name ?? ''} · ${formatMoney(payment.expectedAmount)}`}
+                    style={{ flex: `${payment.expectedAmount} 1 0` }}
+                    className={`flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap rounded-lg px-2.5 font-mono text-xs font-medium ${paid ? 'bg-[var(--hero-fill)] text-[#0c2b20]' : 'border-[1.5px] border-[var(--due)] bg-[rgb(224_162_30/12%)]'}`}
+                  >
+                    <b className="truncate">{departmentOf(payment)?.name}</b>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="mt-3 flex flex-wrap justify-between gap-x-4 gap-y-1 text-[13.5px] text-[var(--hero-dim)]">
+              <span><b className="font-semibold text-[var(--hero-ink)]">{percent}%</b> cobrado</span>
+              <span>
+                {openCurrent.length
+                  ? <><b className="font-semibold text-[var(--hero-ink)]">{openCurrent.length}</b> por cobrar ({formatMoney(sum(openCurrent, (payment) => payment.expectedAmount))})</>
+                  : 'Todo cobrado este mes'}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section className="panel min-w-0 overflow-hidden" aria-label="Indicadores">
+          <div className={line}>
+            <span className="text-sm font-semibold">Atrasado</span>
+            <span className="row-span-2 text-right font-display text-[1.4rem] font-semibold text-[var(--danger-text)]">{formatMoney(sum(latePayments, (payment) => payment.expectedAmount))}</span>
+            <span className="text-[12.5px] text-[var(--muted)]">{latePayments.length ? `${latePayments.length} mensualidad${latePayments.length === 1 ? '' : 'es'} · ${lateNames}` : 'Sin atrasos'}</span>
+          </div>
+          <div className={line}>
+            <span className="text-sm font-semibold">Cobrado en {monthName}</span>
+            <span className="row-span-2 text-right font-display text-[1.4rem] font-semibold">{formatMoney(collectedMonth)}</span>
+            <span className="text-[12.5px] text-[var(--muted)]">Según la fecha real de pago</span>
+          </div>
+          <div className={line}>
+            <span className="text-sm font-semibold">Ocupación</span>
+            <span className="row-span-2 text-right font-display text-[1.4rem] font-semibold">{occupied} de {departments.length}</span>
+            <span className="text-[12.5px] text-[var(--muted)]">{departments.length - occupied ? `${departments.length - occupied} sin alquiler activo` : 'Todos con alquiler'}</span>
+          </div>
+          <div className={line}>
+            <span className="text-sm font-semibold">Total histórico</span>
+            <span className="row-span-2 text-right font-display text-[1.4rem] font-semibold">{formatMoney(totalIncome)}</span>
+            <span className="text-[12.5px] text-[var(--muted)]">{paidPayments.length} pagos registrados</span>
+          </div>
+        </section>
       </div>
 
-      <DepartmentPaymentsChart items={paymentsByDepartment} />
-
-      <div>
-        <div className="mb-3 flex items-end justify-between gap-4">
+      <section className="panel p-5 sm:p-6" aria-labelledby="matrix-title">
+        <div className="flex flex-wrap items-start justify-between gap-x-5 gap-y-2">
           <div>
-            <h3 className="text-lg font-bold">Departamentos</h3>
-            <p className="mt-1 text-sm text-[var(--muted)]">Vencimiento: último día de cada mes</p>
+            <h3 id="matrix-title" className="font-display text-base font-semibold">Pagos de los últimos 12 meses</h3>
+            <p className="mt-0.5 text-[13px] text-[var(--muted)]">Tocá un mes para registrar o editar ese pago.</p>
           </div>
-          <Link to="/departamentos" className="text-sm font-bold text-[var(--primary)] hover:underline">Ver todos</Link>
+          <StripLegend />
         </div>
-
-        <div className="grid gap-3 lg:grid-cols-2">
-          {departmentViews.map((department) => {
-            const currentPayment = department.payments.find((payment) => isSameMonth(payment.period))
-            const contractIds = new Set(data?.contracts
-              .filter((contract) => contract.departmentId === department.id)
-              .map((contract) => contract.id))
-            const overdueCount = payments.filter(
-              (payment) => contractIds.has(payment.contractId)
-                && payment.status === 'PENDIENTE'
-                && isPeriodOverdue(payment.period),
-            ).length
+        <div className="mt-5 grid grid-cols-[76px_repeat(12,minmax(0,1fr))] items-center gap-x-[3px] gap-y-2 sm:grid-cols-[minmax(84px,156px)_repeat(12,minmax(0,1fr))] sm:gap-x-1">
+          <span />
+          <StripHeader periods={periods} />
+          {departments.map((department) => {
+            const contract = contracts.find((item) => item.departmentId === department.id && item.status === 'ACTIVO')
+            const tenant = tenants.find((item) => item.id === contract?.tenantId)
+            const own = paymentsOf(department.id)
             return (
-              <Link
-                key={department.id}
-                to={`/departamentos/${department.id}`}
-                className="group border border-[var(--border)] bg-[var(--surface)] p-5 transition hover:border-[var(--primary)]"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-bold text-[var(--muted)]">{department.id}</p>
-                    <h4 className="mt-1 text-lg font-bold group-hover:text-[var(--primary)]">{department.name}</h4>
-                    <p className="mt-1 text-sm text-[var(--muted)]">{department.tenant?.fullName || 'Sin inquilino activo'}</p>
-                  </div>
-                  <span className={`px-2.5 py-1 text-[11px] font-bold ${overdueCount ? 'bg-[var(--danger-soft)] text-[var(--danger-text)]' : currentPayment?.status === 'PAGADO' ? 'bg-[var(--success-bg)] text-[var(--success-text)]' : 'bg-[var(--warning-bg)] text-[var(--warning-text)]'}`}>
-                    {overdueCount ? `${overdueCount} ATRASADO${overdueCount === 1 ? '' : 'S'}` : currentPayment ? currentPayment.status : 'SIN REGISTRO'}
-                  </span>
-                </div>
-                <div className="mt-5 flex items-end justify-between border-t border-[var(--border-soft)] pt-4">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">Alquiler mensual</p>
-                    <p className="mt-1 font-bold">{formatMoney(department.contract?.monthlyAmount ?? 0)}</p>
-                  </div>
-                  <p className="text-xs font-bold text-[var(--primary)]">Abrir detalle →</p>
-                </div>
-              </Link>
+              <div key={department.id} className="contents">
+                <Link to={`/departamentos/${department.id}`} className="min-w-0 pr-1 leading-tight sm:pr-2">
+                  <b className="block text-[13px] font-semibold hover:text-[var(--primary)] sm:text-sm">{department.name}</b>
+                  <small className="hidden truncate text-xs text-[var(--muted)] sm:block">
+                    {tenant ? tenant.fullName.split(/\s+/).slice(0, 2).join(' ') : department.status === 'ACTIVO' ? 'Disponible' : department.status === 'MANTENIMIENTO' ? 'En mantenimiento' : 'Inactivo'}
+                  </small>
+                </Link>
+                {periods.map((period) => (
+                  <PaymentCell
+                    key={period}
+                    label={cellLabel(department.name, period)}
+                    payment={findPayment(own, period)}
+                    onSelect={(payment) => navigate(`/departamentos/${department.id}?pago=${payment.id}`)}
+                  />
+                ))}
+              </div>
             )
           })}
         </div>
-      </div>
+        {!departments.length ? <p className="py-6 text-center text-sm text-[var(--muted)]">Todavía no hay departamentos registrados.</p> : null}
+      </section>
 
-      {pendingPayments[0] ? (
-        <p className="text-xs text-[var(--muted)]">
-          Próximo registro pendiente: {formatPeriod(pendingPayments[0].period)}.
-        </p>
-      ) : null}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+        <section className="panel p-5 sm:p-6" aria-labelledby="todo-title">
+          <h3 id="todo-title" className="font-display text-base font-semibold">Para cobrar</h3>
+          <p className="mt-0.5 text-[13px] text-[var(--muted)]">Vence el último día de cada mes. Primero las más antiguas.</p>
+          <div className="mt-3">
+            {todo.map((payment) => {
+              const department = departmentOf(payment)
+              const contract = contractById.get(payment.contractId)
+              const tenant = tenants.find((item) => item.id === contract?.tenantId)
+              const late = paymentState(payment) === 'late'
+              const months = monthsLate(periodKey(payment.period))
+              return (
+                <div key={payment.id} className="grid items-center gap-x-4 gap-y-2 border-t border-[var(--border-soft)] py-3.5 first:border-t-0 sm:grid-cols-[minmax(0,1fr)_auto]">
+                  <div className="min-w-0">
+                    <p className="font-semibold">{department?.name} · {capitalize(formatPeriod(payment.period))}</p>
+                    <p className="text-[13px] text-[var(--muted)]">{tenant?.fullName ?? '—'} · {formatMoney(payment.expectedAmount)}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2.5 sm:justify-end">
+                    <StatusPill tone={late ? 'late' : 'due'}>{late ? `Atrasado ${months} ${months === 1 ? 'mes' : 'meses'}` : 'Vence este mes'}</StatusPill>
+                    <Link
+                      to={`/departamentos/${department?.id}?pago=${payment.id}`}
+                      className="inline-flex min-h-9 items-center rounded-xl bg-[var(--primary)] px-3.5 text-[13px] font-semibold text-[var(--on-primary)] hover:bg-[var(--primary-hover)]"
+                    >
+                      Registrar
+                    </Link>
+                  </div>
+                </div>
+              )
+            })}
+            {!todo.length ? <p className="py-6 text-center text-sm text-[var(--muted)]">No hay mensualidades por cobrar.</p> : null}
+          </div>
+        </section>
+
+        <DepartmentPaymentsChart items={paymentsByDepartment} />
+      </div>
     </section>
   )
 }

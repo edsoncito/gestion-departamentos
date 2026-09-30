@@ -9,7 +9,7 @@ export function NotFoundPage() {
       </h2>
       <Link
         to="/"
-        className="mt-6 inline-flex bg-[var(--primary)] px-4 py-2 text-sm font-bold text-[var(--on-primary)] hover:bg-[var(--primary-hover)]"
+        className="mt-6 inline-flex rounded-xl bg-[var(--primary)] px-4 py-2 text-sm font-bold text-[var(--on-primary)] hover:bg-[var(--primary-hover)]"
       >
         Volver al resumen
       </Link>

@@ -7,8 +7,8 @@
   "scope": "/gestion-departamentos/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#f2f4ef",
-  "theme_color": "#315f50",
+  "background_color": "#edf1ed",
+  "theme_color": "#1c5b45",
   "lang": "es",
   "categories": ["business", "finance", "productivity"],
   "icons": [

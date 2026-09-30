@@ -148,7 +148,7 @@ export function TenantDetailPage() {
         <button type="button" onClick={openEdit} className="min-h-11 w-full shrink-0 border border-[var(--border)] bg-[var(--surface)] px-5 text-sm font-bold hover:border-[var(--primary)] sm:w-auto">Editar datos</button>
       </div>
 
-      <section className="border border-[var(--border)] bg-[var(--surface)] p-5">
+      <section className="panel p-5">
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">Alquiler actual</p>
@@ -162,7 +162,7 @@ export function TenantDetailPage() {
           <div className="grid w-full gap-3 sm:flex sm:w-auto sm:flex-wrap">
             {activeContract && currentDepartment ? (
               <>
-                <Link to={`/departamentos/${currentDepartment.id}`} className="inline-flex min-h-11 items-center border border-[var(--border)] px-4 text-sm font-bold hover:border-[var(--primary)]">Ver departamento</Link>
+                <Link to={`/departamentos/${currentDepartment.id}`} className="inline-flex min-h-11 items-center rounded-xl border border-[var(--border)] px-4 text-sm font-bold hover:border-[var(--primary)]">Ver departamento</Link>
                 <button type="button" onClick={() => { setExitDate(toDateInputValue()); setSaveError(null); setShowFinalize(true) }} className="min-h-11 bg-[var(--danger-bg)] px-4 text-sm font-bold text-[var(--danger-text)] hover:outline hover:outline-1 hover:outline-[var(--danger-border)]">Finalizar alquiler</button>
               </>
             ) : (
@@ -183,13 +183,13 @@ export function TenantDetailPage() {
           {contracts.map((contract) => {
             const department = data?.departments.find((item) => item.id === contract.departmentId)
             return (
-              <article key={contract.id} className="border border-[var(--border)] bg-[var(--surface)] p-4">
+              <article key={contract.id} className="panel p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-[11px] font-bold uppercase text-[var(--muted)]">Departamento</p>
                     <p className="mt-1 font-bold">{department?.name ?? contract.departmentId}</p>
                   </div>
-                  <span className={`px-2 py-1 text-[11px] font-bold ${contract.status === 'ACTIVO' ? 'bg-[var(--success-bg)] text-[var(--success-text)]' : 'bg-[var(--neutral-bg)] text-[var(--neutral-text)]'}`}>{contract.status}</span>
+                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${contract.status === 'ACTIVO' ? 'bg-[var(--success-bg)] text-[var(--success-text)]' : 'bg-[var(--neutral-bg)] text-[var(--neutral-text)]'}`}>{contract.status}</span>
                 </div>
                 <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-[var(--border-soft)] pt-4 text-sm">
                   <div><dt className="text-[11px] uppercase text-[var(--muted)]">Ingreso</dt><dd className="mt-1">{formatDate(contract.startDate)}</dd></div>
@@ -200,15 +200,15 @@ export function TenantDetailPage() {
               </article>
             )
           })}
-          {!contracts.length ? <p className="border border-[var(--border)] bg-[var(--surface)] p-6 text-center text-sm text-[var(--muted)]">Todavía no tiene contratos registrados.</p> : null}
+          {!contracts.length ? <p className="panel p-6 text-center text-sm text-[var(--muted)]">Todavía no tiene contratos registrados.</p> : null}
         </div>
-        <div className="hidden overflow-x-auto border border-[var(--border)] bg-[var(--surface)] md:block">
+        <div className="hidden panel overflow-x-auto md:block">
           <table className="w-full min-w-[760px] border-collapse text-left text-sm">
-            <thead className="bg-[var(--primary)] text-[var(--on-primary)]"><tr><th className="px-4 py-3">Departamento</th><th className="px-4 py-3">Ingreso</th><th className="px-4 py-3">Vencimiento previsto</th><th className="px-4 py-3">Salida real</th><th className="px-4 py-3">Mensual</th><th className="px-4 py-3">Estado</th></tr></thead>
+            <thead className="bg-[var(--sunk)] text-xs uppercase tracking-wide text-[var(--muted)]"><tr><th className="px-4 py-3 font-semibold">Departamento</th><th className="px-4 py-3 font-semibold">Ingreso</th><th className="px-4 py-3 font-semibold">Vencimiento previsto</th><th className="px-4 py-3 font-semibold">Salida real</th><th className="px-4 py-3 font-semibold">Mensual</th><th className="px-4 py-3 font-semibold">Estado</th></tr></thead>
             <tbody>
               {contracts.map((contract) => {
                 const department = data?.departments.find((item) => item.id === contract.departmentId)
-                return <tr key={contract.id} className="border-t border-[var(--border-soft)] even:bg-[var(--surface-elevated)]"><td className="px-4 py-3 font-bold">{department?.name ?? contract.departmentId}</td><td className="px-4 py-3">{formatDate(contract.startDate)}</td><td className="px-4 py-3">{formatDate(contract.endDate)}</td><td className="px-4 py-3">{formatDate(contract.actualExitDate)}</td><td className="px-4 py-3">{formatMoney(contract.monthlyAmount)}</td><td className="px-4 py-3"><span className={`px-2 py-1 text-[11px] font-bold ${contract.status === 'ACTIVO' ? 'bg-[var(--success-bg)] text-[var(--success-text)]' : 'bg-[var(--neutral-bg)] text-[var(--neutral-text)]'}`}>{contract.status}</span></td></tr>
+                return <tr key={contract.id} className="border-t border-[var(--border-soft)] even:bg-[var(--surface-elevated)]"><td className="px-4 py-3 font-bold">{department?.name ?? contract.departmentId}</td><td className="px-4 py-3">{formatDate(contract.startDate)}</td><td className="px-4 py-3">{formatDate(contract.endDate)}</td><td className="px-4 py-3">{formatDate(contract.actualExitDate)}</td><td className="px-4 py-3">{formatMoney(contract.monthlyAmount)}</td><td className="px-4 py-3"><span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${contract.status === 'ACTIVO' ? 'bg-[var(--success-bg)] text-[var(--success-text)]' : 'bg-[var(--neutral-bg)] text-[var(--neutral-text)]'}`}>{contract.status}</span></td></tr>
               })}
               {!contracts.length ? <tr><td colSpan={6} className="px-4 py-8 text-center text-[var(--muted)]">Todavía no tiene contratos registrados.</td></tr> : null}
             </tbody>
@@ -220,11 +220,11 @@ export function TenantDetailPage() {
         <ResponsiveSheet titleId="edit-tenant-title">
             <h3 id="edit-tenant-title" className="text-2xl font-bold">Editar inquilino</h3>
             <div className="mt-5 space-y-4">
-              <label className="block text-sm font-bold">Nombre completo<input value={tenantForm.fullName} onChange={(event) => setTenantForm({ ...tenantForm, fullName: event.target.value })} className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3 outline-none focus:border-[var(--primary)]" /></label>
-              <label className="block text-sm font-bold">Carné de identidad<input value={tenantForm.documentId} onChange={(event) => setTenantForm({ ...tenantForm, documentId: event.target.value })} className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3 outline-none focus:border-[var(--primary)]" /></label>
-              <label className="block text-sm font-bold">Teléfono<input value={tenantForm.phone} onChange={(event) => setTenantForm({ ...tenantForm, phone: event.target.value })} className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3 outline-none focus:border-[var(--primary)]" /></label>
+              <label className="block text-sm font-bold">Nombre completo<input value={tenantForm.fullName} onChange={(event) => setTenantForm({ ...tenantForm, fullName: event.target.value })} className="field-input mt-2" /></label>
+              <label className="block text-sm font-bold">Carné de identidad<input value={tenantForm.documentId} onChange={(event) => setTenantForm({ ...tenantForm, documentId: event.target.value })} className="field-input mt-2" /></label>
+              <label className="block text-sm font-bold">Teléfono<input value={tenantForm.phone} onChange={(event) => setTenantForm({ ...tenantForm, phone: event.target.value })} className="field-input mt-2" /></label>
             </div>
-            {saveError ? <p className="mt-4 bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger-text)]">{saveError}</p> : null}
+            {saveError ? <p className="mt-4 rounded-xl bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger-text)]">{saveError}</p> : null}
             <div className="mt-6 grid grid-cols-2 gap-3"><button type="button" disabled={saving} onClick={() => setShowEdit(false)} className="min-h-11 border border-[var(--border)] font-bold">Cancelar</button><button type="button" disabled={saving} onClick={() => void submitEdit()} className="min-h-11 bg-[var(--primary)] font-bold text-[var(--on-primary)] disabled:bg-[var(--disabled)]">{saving ? 'Guardando…' : 'Guardar'}</button></div>
         </ResponsiveSheet>
       ) : null}
@@ -233,13 +233,13 @@ export function TenantDetailPage() {
         <ResponsiveSheet titleId="assign-title">
             <p className="text-xs font-bold uppercase text-[var(--muted)]">Nuevo contrato</p><h3 id="assign-title" className="mt-1 text-2xl font-bold">Asignar departamento</h3>
             <div className="mt-5 space-y-4">
-              <label className="block text-sm font-bold">Departamento<select value={assignment.departmentId} onChange={(event) => setAssignment({ ...assignment, departmentId: event.target.value })} className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3"><option value="">Seleccionar</option>{availableDepartments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</select></label>
-              <div className="grid gap-4 sm:grid-cols-2"><label className="block text-sm font-bold">Fecha de ingreso<input type="date" value={assignment.startDate} onChange={(event) => setAssignment({ ...assignment, startDate: event.target.value })} className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3" /></label><label className="block text-sm font-bold">Vencimiento previsto<input type="date" value={assignment.endDate} onChange={(event) => setAssignment({ ...assignment, endDate: event.target.value })} className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3" /></label></div>
-              <label className="block text-sm font-bold">Alquiler mensual (Bs)<input type="number" min="1" step="1" value={assignment.monthlyAmount || ''} onChange={(event) => setAssignment({ ...assignment, monthlyAmount: Number(event.target.value) })} className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3" /></label>
-              <label className="block text-sm font-bold">Observaciones<textarea rows={3} value={assignment.notes} onChange={(event) => setAssignment({ ...assignment, notes: event.target.value })} className="mt-2 w-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2" /></label>
+              <label className="block text-sm font-bold">Departamento<select value={assignment.departmentId} onChange={(event) => setAssignment({ ...assignment, departmentId: event.target.value })} className="field-input mt-2"><option value="">Seleccionar</option>{availableDepartments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</select></label>
+              <div className="grid gap-4 sm:grid-cols-2"><label className="block text-sm font-bold">Fecha de ingreso<input type="date" value={assignment.startDate} onChange={(event) => setAssignment({ ...assignment, startDate: event.target.value })} className="field-input mt-2" /></label><label className="block text-sm font-bold">Vencimiento previsto<input type="date" value={assignment.endDate} onChange={(event) => setAssignment({ ...assignment, endDate: event.target.value })} className="field-input mt-2" /></label></div>
+              <label className="block text-sm font-bold">Alquiler mensual (Bs)<input type="number" min="1" step="1" value={assignment.monthlyAmount || ''} onChange={(event) => setAssignment({ ...assignment, monthlyAmount: Number(event.target.value) })} className="field-input mt-2" /></label>
+              <label className="block text-sm font-bold">Observaciones<textarea rows={3} value={assignment.notes} onChange={(event) => setAssignment({ ...assignment, notes: event.target.value })} className="field-input mt-2 min-h-0 resize-y" /></label>
             </div>
-            <p className="mt-4 bg-[var(--warning-soft)] px-3 py-2 text-xs text-[var(--warning-text)]">Se crearán automáticamente las mensualidades desde el mes de ingreso hasta el vencimiento previsto.</p>
-            {saveError ? <p className="mt-4 bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger-text)]">{saveError}</p> : null}
+            <p className="mt-4 rounded-xl bg-[var(--warning-soft)] px-3 py-2 text-xs text-[var(--warning-text)]">Se crearán automáticamente las mensualidades desde el mes de ingreso hasta el vencimiento previsto.</p>
+            {saveError ? <p className="mt-4 rounded-xl bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger-text)]">{saveError}</p> : null}
             <div className="mt-6 grid grid-cols-2 gap-3"><button type="button" disabled={saving} onClick={() => setShowAssignment(false)} className="min-h-11 border border-[var(--border)] font-bold">Cancelar</button><button type="button" disabled={saving} onClick={() => void submitAssignment()} className="min-h-11 bg-[var(--primary)] font-bold text-[var(--on-primary)] disabled:bg-[var(--disabled)]">{saving ? 'Asignando…' : 'Crear contrato'}</button></div>
         </ResponsiveSheet>
       ) : null}
@@ -248,8 +248,8 @@ export function TenantDetailPage() {
         <ResponsiveSheet titleId="finalize-title">
             <p className="text-xs font-bold uppercase text-[var(--danger-text)]">Cerrar contrato</p><h3 id="finalize-title" className="mt-1 text-2xl font-bold">Finalizar alquiler</h3>
             <p className="mt-3 text-sm leading-6 text-[var(--muted)]">Se conservarán los pagos realizados y las deudas ya vencidas. Las mensualidades cuyo vencimiento sea posterior a la salida quedarán canceladas.</p>
-            <label className="mt-5 block text-sm font-bold">Fecha real de salida<input type="date" min={activeContract.startDate} max={toDateInputValue()} value={exitDate} onChange={(event) => setExitDate(event.target.value)} className="mt-2 min-h-11 w-full border border-[var(--border)] bg-[var(--surface)] px-3" /></label>
-            {saveError ? <p className="mt-4 bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger-text)]">{saveError}</p> : null}
+            <label className="mt-5 block text-sm font-bold">Fecha real de salida<input type="date" min={activeContract.startDate} max={toDateInputValue()} value={exitDate} onChange={(event) => setExitDate(event.target.value)} className="field-input mt-2" /></label>
+            {saveError ? <p className="mt-4 rounded-xl bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger-text)]">{saveError}</p> : null}
             <div className="mt-6 grid grid-cols-2 gap-3"><button type="button" disabled={saving} onClick={() => setShowFinalize(false)} className="min-h-11 border border-[var(--border)] font-bold">Volver</button><button type="button" disabled={saving} onClick={() => void submitFinalize()} className="min-h-11 bg-[var(--danger-text)] font-bold text-white disabled:bg-[var(--disabled)]">{saving ? 'Finalizando…' : 'Finalizar alquiler'}</button></div>
         </ResponsiveSheet>
       ) : null}
