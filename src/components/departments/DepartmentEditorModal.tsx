@@ -46,7 +46,7 @@ export function DepartmentEditorModal({
   }
 
   return (
-    <ResponsiveSheet titleId="department-editor-title">
+    <ResponsiveSheet titleId="department-editor-title" onClose={onClose}>
         <p className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">{eyebrow}</p>
         <h3 id="department-editor-title" className="mt-1 text-2xl font-bold">{title}</h3>
 

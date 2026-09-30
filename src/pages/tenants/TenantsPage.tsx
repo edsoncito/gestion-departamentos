@@ -111,7 +111,7 @@ export function TenantsPage() {
       </div>
 
       {showEditor ? (
-        <ResponsiveSheet titleId="new-tenant-title">
+        <ResponsiveSheet titleId="new-tenant-title" onClose={() => setShowEditor(false)}>
             <p className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">Nuevo registro</p>
             <h3 id="new-tenant-title" className="mt-1 text-2xl font-bold">Agregar inquilino</h3>
             <div className="mt-5 space-y-4">

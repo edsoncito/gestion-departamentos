@@ -217,7 +217,7 @@ export function TenantDetailPage() {
       </section>
 
       {showEdit ? (
-        <ResponsiveSheet titleId="edit-tenant-title">
+        <ResponsiveSheet titleId="edit-tenant-title" onClose={() => setShowEdit(false)}>
             <h3 id="edit-tenant-title" className="text-2xl font-bold">Editar inquilino</h3>
             <div className="mt-5 space-y-4">
               <label className="block text-sm font-bold">Nombre completo<input value={tenantForm.fullName} onChange={(event) => setTenantForm({ ...tenantForm, fullName: event.target.value })} className="field-input mt-2" /></label>
@@ -230,7 +230,7 @@ export function TenantDetailPage() {
       ) : null}
 
       {showAssignment ? (
-        <ResponsiveSheet titleId="assign-title">
+        <ResponsiveSheet titleId="assign-title" onClose={() => setShowAssignment(false)}>
             <p className="text-xs font-bold uppercase text-[var(--muted)]">Nuevo contrato</p><h3 id="assign-title" className="mt-1 text-2xl font-bold">Asignar departamento</h3>
             <div className="mt-5 space-y-4">
               <label className="block text-sm font-bold">Departamento<select value={assignment.departmentId} onChange={(event) => setAssignment({ ...assignment, departmentId: event.target.value })} className="field-input mt-2"><option value="">Seleccionar</option>{availableDepartments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</select></label>
@@ -245,7 +245,7 @@ export function TenantDetailPage() {
       ) : null}
 
       {showFinalize && activeContract ? (
-        <ResponsiveSheet titleId="finalize-title">
+        <ResponsiveSheet titleId="finalize-title" onClose={() => setShowFinalize(false)}>
             <p className="text-xs font-bold uppercase text-[var(--danger-text)]">Cerrar contrato</p><h3 id="finalize-title" className="mt-1 text-2xl font-bold">Finalizar alquiler</h3>
             <p className="mt-3 text-sm leading-6 text-[var(--muted)]">Se conservarán los pagos realizados y las deudas ya vencidas. Las mensualidades cuyo vencimiento sea posterior a la salida quedarán canceladas.</p>
             <label className="mt-5 block text-sm font-bold">Fecha real de salida<input type="date" min={activeContract.startDate} max={toDateInputValue()} value={exitDate} onChange={(event) => setExitDate(event.target.value)} className="field-input mt-2" /></label>

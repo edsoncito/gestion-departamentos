@@ -417,7 +417,7 @@ export function DepartmentDetailPage() {
       </section>
 
       {showEditor && selectedPayment ? (
-        <ResponsiveSheet titleId="payment-title">
+        <ResponsiveSheet titleId="payment-title" onClose={closeEditor}>
             <p className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">
               {editorMode === 'register' ? 'Registrar pago' : 'Editar pago'}
             </p>
@@ -435,7 +435,7 @@ export function DepartmentDetailPage() {
                 >
                   {duePendingPayments.map((payment) => (
                     <option key={payment.id} value={payment.id}>
-                      {formatPeriod(payment.period)} · {formatMoney(payment.expectedAmount)}
+                      {capitalize(formatPeriod(payment.period))} · {formatMoney(payment.expectedAmount)}
                     </option>
                   ))}
                 </select>
