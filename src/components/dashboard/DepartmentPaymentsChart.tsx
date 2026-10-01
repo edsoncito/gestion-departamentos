@@ -25,11 +25,12 @@ export function DepartmentPaymentsChart({ items }: DepartmentPaymentsChartProps)
           const barWidth = item.amount > 0 ? Math.max(percentage, 2) : 0
           return (
             <div key={item.id}>
-              <div className="flex items-baseline justify-between gap-4">
-                <p className="min-w-0 truncate text-sm font-semibold">{item.name}</p>
-                <p className="shrink-0 text-[13px] tabular-nums text-[var(--muted)]">
-                  {formatMoney(item.amount)} · {item.paymentCount} pago{item.paymentCount === 1 ? '' : 's'}
-                </p>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold" title={item.name}>{item.name}</p>
+                  <p className="text-xs text-[var(--muted)]">{item.paymentCount} pago{item.paymentCount === 1 ? '' : 's'}</p>
+                </div>
+                <p className="shrink-0 text-sm font-semibold tabular-nums">{formatMoney(item.amount)}</p>
               </div>
               <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-[var(--sunk)]" aria-hidden="true">
                 <div className="h-full rounded-full bg-[var(--primary)] transition-[width] duration-500" style={{ width: `${barWidth}%` }} />

@@ -1,7 +1,6 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { DepartmentPaymentsChart } from '../../components/dashboard/DepartmentPaymentsChart'
-import { PaymentCell, StripHeader, StripLegend } from '../../components/ui/PaymentStrip'
-import { cellLabel, findPayment } from '../../components/ui/paymentStripUtils'
+import { DepartmentSnapshotCard, type DepartmentSnapshot } from '../../components/dashboard/DepartmentSnapshotCard'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { StatusPill } from '../../components/ui/StatusPill'
 import { useRentalData } from '../../context/RentalDataContext'
@@ -12,7 +11,6 @@ import {
   formatMoney,
   formatPeriod,
   isSameMonth,
-  lastPeriods,
   monthsLate,
   paymentState,
   periodKey,
@@ -28,12 +26,10 @@ function todayLabel() {
 
 export function DashboardPage() {
   const { data, loading } = useRentalData()
-  const navigate = useNavigate()
   const departments = data?.departments ?? []
   const contracts = data?.contracts ?? []
   const payments = data?.payments ?? []
   const tenants = data?.tenants ?? []
-  const periods = lastPeriods(12)
   const thisMonth = currentPeriod()
 
   const contractById = new Map(contracts.map((contract) => [contract.id, contract]))
@@ -50,7 +46,7 @@ export function DashboardPage() {
   const percent = expected ? Math.round((collectedPeriod / expected) * 100) : 0
   const openCurrent = currentPayments.filter((payment) => payment.status !== 'PAGADO')
   const latePayments = payments.filter((payment) => paymentState(payment) === 'late')
-  const lateNames = [...new Set(latePayments.map((payment) => departmentOf(payment)?.name).filter(Boolean))].join(', ')
+  const lateDepartmentCount = new Set(latePayments.map((payment) => contractById.get(payment.contractId)?.departmentId)).size
   const paidPayments = payments.filter((payment) => payment.status === 'PAGADO')
   const collectedMonth = sum(
     paidPayments.filter((payment) => isSameMonth(payment.paidAt)),
@@ -67,9 +63,56 @@ export function DashboardPage() {
       return { amount: sum(paid, (payment) => payment.paidAmount ?? 0), id: department.id, name: department.name, paymentCount: paid.length }
     })
     .sort((left, right) => right.amount - left.amount || left.name.localeCompare(right.name))
+  const departmentSnapshots: DepartmentSnapshot[] = departments.map((department) => {
+    const ownPayments = paymentsOf(department.id)
+    const pending = ownPayments.filter((payment) => ['late', 'due'].includes(paymentState(payment)))
+      .sort((left, right) => left.period.localeCompare(right.period))
+    const overdueCount = pending.filter((payment) => paymentState(payment) === 'late').length
+    const current = ownPayments.filter((payment) => periodKey(payment.period) === thisMonth && payment.status !== 'CANCELADO')
+    const latestPaid = ownPayments.filter((payment) => payment.status === 'PAGADO' && payment.paidAt)
+      .sort((left, right) => (right.paidAt ?? '').localeCompare(left.paidAt ?? ''))[0]
+    const activeContract = contracts.find((contract) => contract.departmentId === department.id && contract.status === 'ACTIVO')
+    const tenant = tenants.find((item) => item.id === activeContract?.tenantId)
+    const status = overdueCount
+      ? { label: `${overdueCount} atrasada${overdueCount === 1 ? '' : 's'}`, tone: 'late' as const }
+      : pending.length
+        ? { label: 'Pendiente este mes', tone: 'due' as const }
+        : current.length && current.every((payment) => payment.status === 'PAGADO')
+          ? { label: 'Mes pagado', tone: 'paid' as const }
+          : activeContract
+            ? { label: 'Sin registro del mes', tone: 'neutral' as const }
+            : { label: department.status === 'ACTIVO' ? 'Disponible' : department.status === 'MANTENIMIENTO' ? 'Mantenimiento' : 'Inactivo', tone: 'neutral' as const }
+
+    return {
+      id: department.id,
+      name: department.name,
+      tenantName: tenant?.fullName ?? null,
+      status: status.label,
+      tone: status.tone,
+      pendingCount: pending.length,
+      overdueCount,
+      pendingAmount: sum(pending, (payment) => payment.expectedAmount),
+      expectedThisMonth: sum(current, (payment) => payment.expectedAmount),
+      collectedThisMonth: sum(current.filter((payment) => payment.status === 'PAGADO'), (payment) => payment.paidAmount ?? 0),
+      hasCurrentPeriod: current.length > 0,
+      lastPaidAt: latestPaid?.paidAt ?? null,
+      lastPaidPeriod: latestPaid?.period ?? null,
+      nextPaymentId: pending[0]?.id ?? null,
+    }
+  })
   const monthName = new Intl.DateTimeFormat('es-BO', { month: 'short' }).format(new Date()).replace('.', '')
-  const dash = loading && !data
-  const line = 'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 border-t border-[var(--border-soft)] px-5 py-3.5 first:border-t-0'
+  const line = 'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 border-t border-[var(--border-soft)] px-5 py-3.5 first:border-t-0'
+
+  if (!data) {
+    return (
+      <section className="space-y-6">
+        <PageHeader eyebrow={todayLabel()} title="Resumen" description="Cobros, atrasos y ocupación de tus departamentos." />
+        <p className="panel p-6 text-sm text-[var(--muted)]">
+          {loading ? 'Cargando la información de tus departamentos…' : 'No hay datos disponibles. Revisá la conexión con Google Sheets y volvé a intentar.'}
+        </p>
+      </section>
+    )
+  }
 
   return (
     <section className="space-y-6">
@@ -83,29 +126,19 @@ export function DashboardPage() {
         <section aria-labelledby="hero-title" className="flex min-w-0 flex-col justify-between gap-6 rounded-[22px] border border-[var(--hero-line)] bg-[var(--hero)] p-5 text-[var(--hero-ink)] sm:p-7">
           <p id="hero-title" className="eyebrow !text-[var(--hero-dim)]">Mensualidades de {formatPeriod(`${thisMonth}-01`)}</p>
           <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1">
-            <strong className="font-display text-[clamp(2.6rem,7vw,4rem)] font-bold leading-none tracking-[-0.03em]">{dash ? '—' : formatMoney(collectedPeriod)}</strong>
+            <strong className="font-display text-[clamp(2rem,7vw,4rem)] font-bold leading-none tracking-[-0.03em]">{formatMoney(collectedPeriod)}</strong>
             <span className="text-[var(--hero-dim)]">cobrados de {formatMoney(expected)}</span>
           </div>
           <div>
-            <div className="flex h-11 gap-1" role="img" aria-label={`${percent}% de las mensualidades de ${formatPeriod(`${thisMonth}-01`)} cobrado`}>
-              {currentPayments.map((payment) => {
-                const paid = payment.status === 'PAGADO'
-                return (
-                  <div
-                    key={payment.id}
-                    title={`${departmentOf(payment)?.name ?? ''} · ${formatMoney(payment.expectedAmount)}`}
-                    style={{ flex: `${payment.expectedAmount} 1 0` }}
-                    className={`flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap rounded-lg px-2.5 font-mono text-xs font-medium ${paid ? 'bg-[var(--hero-fill)] text-[#0c2b20]' : 'border-[1.5px] border-[var(--due)] bg-[rgb(224_162_30/12%)]'}`}
-                  >
-                    <b className="truncate">{departmentOf(payment)?.name}</b>
-                  </div>
-                )
-              })}
+            <div className="h-3 overflow-hidden rounded-full bg-[rgb(255_255_255/18%)]" role="img" aria-label={`${percent}% del importe previsto para ${formatPeriod(`${thisMonth}-01`)} cobrado`}>
+              <div className="h-full rounded-full bg-[var(--hero-fill)]" style={{ width: `${Math.min(percent, 100)}%` }} />
             </div>
             <div className="mt-3 flex flex-wrap justify-between gap-x-4 gap-y-1 text-[13.5px] text-[var(--hero-dim)]">
               <span><b className="font-semibold text-[var(--hero-ink)]">{percent}%</b> cobrado</span>
               <span>
-                {openCurrent.length
+                {!currentPayments.length
+                  ? 'Sin mensualidades programadas'
+                  : openCurrent.length
                   ? <><b className="font-semibold text-[var(--hero-ink)]">{openCurrent.length}</b> por cobrar ({formatMoney(sum(openCurrent, (payment) => payment.expectedAmount))})</>
                   : 'Todo cobrado este mes'}
               </span>
@@ -116,63 +149,39 @@ export function DashboardPage() {
         <section className="panel min-w-0 overflow-hidden" aria-label="Indicadores">
           <div className={line}>
             <span className="text-sm font-semibold">Atrasado</span>
-            <span className="row-span-2 text-right font-display text-[1.4rem] font-semibold text-[var(--danger-text)]">{formatMoney(sum(latePayments, (payment) => payment.expectedAmount))}</span>
-            <span className="text-[12.5px] text-[var(--muted)]">{latePayments.length ? `${latePayments.length} mensualidad${latePayments.length === 1 ? '' : 'es'} · ${lateNames}` : 'Sin atrasos'}</span>
+            <span className="row-span-2 text-right font-display text-lg font-semibold tabular-nums text-[var(--danger-text)] sm:text-[1.4rem]">{formatMoney(sum(latePayments, (payment) => payment.expectedAmount))}</span>
+            <span className="text-[12.5px] text-[var(--muted)]">{latePayments.length ? `${latePayments.length} mensualidad${latePayments.length === 1 ? '' : 'es'} · ${lateDepartmentCount} departamento${lateDepartmentCount === 1 ? '' : 's'}` : 'Sin atrasos'}</span>
           </div>
           <div className={line}>
             <span className="text-sm font-semibold">Cobrado en {monthName}</span>
-            <span className="row-span-2 text-right font-display text-[1.4rem] font-semibold">{formatMoney(collectedMonth)}</span>
+            <span className="row-span-2 text-right font-display text-lg font-semibold tabular-nums sm:text-[1.4rem]">{formatMoney(collectedMonth)}</span>
             <span className="text-[12.5px] text-[var(--muted)]">Según la fecha real de pago</span>
           </div>
           <div className={line}>
             <span className="text-sm font-semibold">Ocupación</span>
-            <span className="row-span-2 text-right font-display text-[1.4rem] font-semibold">{occupied} de {departments.length}</span>
+            <span className="row-span-2 text-right font-display text-lg font-semibold tabular-nums sm:text-[1.4rem]">{occupied} de {departments.length}</span>
             <span className="text-[12.5px] text-[var(--muted)]">{departments.length - occupied ? `${departments.length - occupied} sin alquiler activo` : 'Todos con alquiler'}</span>
           </div>
           <div className={line}>
             <span className="text-sm font-semibold">Total histórico</span>
-            <span className="row-span-2 text-right font-display text-[1.4rem] font-semibold">{formatMoney(totalIncome)}</span>
+            <span className="row-span-2 text-right font-display text-lg font-semibold tabular-nums sm:text-[1.4rem]">{formatMoney(totalIncome)}</span>
             <span className="text-[12.5px] text-[var(--muted)]">{paidPayments.length} pagos registrados</span>
           </div>
         </section>
       </div>
 
-      <section className="panel p-5 sm:p-6" aria-labelledby="matrix-title">
-        <div className="flex flex-wrap items-start justify-between gap-x-5 gap-y-2">
+      <section aria-labelledby="departments-title">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h3 id="matrix-title" className="font-display text-base font-semibold">Pagos de los últimos 12 meses</h3>
-            <p className="mt-0.5 text-[13px] text-[var(--muted)]">Tocá un mes para registrar o editar ese pago.</p>
+            <h3 id="departments-title" className="font-display text-lg font-semibold">Situación por departamento</h3>
+            <p className="mt-1 text-[13px] text-[var(--muted)]">Deudas, cobros del mes y último pago, de un vistazo.</p>
           </div>
-          <StripLegend />
+          <Link to="/departamentos" className="text-sm font-semibold text-[var(--primary)] hover:underline">Ver todos →</Link>
         </div>
-        <div className="mt-5 grid grid-cols-[76px_repeat(12,minmax(0,1fr))] items-center gap-x-[3px] gap-y-2 sm:grid-cols-[minmax(84px,156px)_repeat(12,minmax(0,1fr))] sm:gap-x-1">
-          <span />
-          <StripHeader periods={periods} />
-          {departments.map((department) => {
-            const contract = contracts.find((item) => item.departmentId === department.id && item.status === 'ACTIVO')
-            const tenant = tenants.find((item) => item.id === contract?.tenantId)
-            const own = paymentsOf(department.id)
-            return (
-              <div key={department.id} className="contents">
-                <Link to={`/departamentos/${department.id}`} className="min-w-0 pr-1 leading-tight sm:pr-2">
-                  <b className="block text-[13px] font-semibold hover:text-[var(--primary)] sm:text-sm">{department.name}</b>
-                  <small className="hidden truncate text-xs text-[var(--muted)] sm:block">
-                    {tenant ? tenant.fullName.split(/\s+/).slice(0, 2).join(' ') : department.status === 'ACTIVO' ? 'Disponible' : department.status === 'MANTENIMIENTO' ? 'En mantenimiento' : 'Inactivo'}
-                  </small>
-                </Link>
-                {periods.map((period) => (
-                  <PaymentCell
-                    key={period}
-                    label={cellLabel(department.name, period)}
-                    payment={findPayment(own, period)}
-                    onSelect={(payment) => navigate(`/departamentos/${department.id}?pago=${payment.id}`)}
-                  />
-                ))}
-              </div>
-            )
-          })}
+        <div className="grid gap-4 lg:grid-cols-2">
+          {departmentSnapshots.map((item) => <DepartmentSnapshotCard key={item.id} item={item} />)}
         </div>
-        {!departments.length ? <p className="py-6 text-center text-sm text-[var(--muted)]">Todavía no hay departamentos registrados.</p> : null}
+        {!departments.length ? <p className="panel p-6 text-center text-sm text-[var(--muted)]">Todavía no hay departamentos registrados.</p> : null}
       </section>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
